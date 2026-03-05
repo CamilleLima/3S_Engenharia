@@ -1,0 +1,24 @@
+# =============================================================================
+# 3S Engenharia — Dependências Back-end
+# =============================================================================
+
+# --- Produção ---
+Django==5.2
+djangorestframework==3.16.0
+django-cors-headers==4.7.0
+python-dotenv==1.1.0
+psycopg2-binary==2.9.10       # driver PostgreSQL
+whitenoise==6.9.0             # serve arquivos estáticos (front-end/dist) em produção
+gunicorn==23.0.0              # servidor WSGI para produção
+
+# --- Geração de PDF (etapa futura) ---
+# reportlab==4.2.5
+# weasyprint==62.3
+
+# --- Qualidade de código ---
+ruff==0.9.10                  # linting + formatação (substitui black, flake8, isort)
+
+# --- Testes ---
+pytest==8.3.5
+pytest-django==4.10.0
+pytest-cov==6.1.0             # cobertura de testes
