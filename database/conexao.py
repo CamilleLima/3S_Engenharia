@@ -1,7 +1,5 @@
 import sqlite3
 from sqlite3 import Error
-import sys
-import os
 
 class Conexao:
     #Conecta o BD
@@ -27,20 +25,32 @@ class Conexao:
                     resp_nome varchar not null,
                     resp_cont varchar not null
                 );
-                
-                insert into config
-                values (4.5, 2000, 0.95, 550, 2.5, 80, 4.5, 'Thales Campos', '68 9973 3807');
             """)
+            
+            # Preenche com os valores padrão
+            cursor.execute("""
+                insert into config
+                    values (4.5, 2000, 0.95, 550, 2.5, 80, 4.5, 'Thales Campos', '68 9973 3807');
+            """)
+            
+            # Cria a tabela clientes se não existir
+            # Armazena as informações dos clientes
+            cursor.execute("""
+                    create table if not exists clientes (
+                        id integer not null primary key autoincrement,
+                        nome varchar not null,
+                        telefone char(11) not null,
+                        cidade varchar not null
+                        );
+                    """)
 
-            # Cria a tabela de orcamentos se não existir (ainda incompleto)
+            # Cria a tabela de orcamentos se não existir
             # Esta tabela armazena as informações de cada orçamento, para fins de serem
             # consultadas e aparecerem na lista de orçamentos do sistema.
             cursor.execute("""
                 create table if not exists orcamentos (
                     id integer not null primary key autoincrement,
-                    cliente varchar not null,
-                    telefone char(11) not null,
-                    cidade varchar not null,
+                    cliente_id integer not null,
                     
                     con_med int not null,
                     tipo_lig varchar not null,
@@ -57,9 +67,13 @@ class Conexao:
                     inv2 varchar null,
                     fabr_inv2 varchar null,
                     pot_inv2 varchar null,
-                    gar_inv2 null
+                    gar_inv2 null,
+                    
+                    foreign key (cliente_id) references clientes (id)
                 );
             """)
+            
+            con.commit()
             
             return con
         except Error as er:
