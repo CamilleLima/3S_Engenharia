@@ -30,7 +30,8 @@ class Conexao:
             # Preenche com os valores padrão
             cursor.execute("""
                 insert into config
-                    values (4.5, 2000, 0.95, 550, 2.5, 80, 4.5, 'Thales Campos', '68 9973 3807');
+                select 4.5, 2000, 0.95, 550, 2.5, 80, 4.5, 'Thales Campos', '68 9973 3807'
+                where not exists (select 1 from config);
             """)
             
             # Cria a tabela clientes se não existir
@@ -40,34 +41,38 @@ class Conexao:
                         id integer not null primary key autoincrement,
                         nome varchar not null,
                         telefone char(11) not null,
-                        cidade varchar not null
+                        estado varchar not null,
+                        cidade varchar not null,
+                        consumo_medio not null
                         );
                     """)
 
             # Cria a tabela de orcamentos se não existir
             # Esta tabela armazena as informações de cada orçamento, para fins de serem
             # consultadas e aparecerem na lista de orçamentos do sistema.
+            # O status é ou pendente, ou aceito ou recusado.
             cursor.execute("""
                 create table if not exists orcamentos (
                     id integer not null primary key autoincrement,
                     cliente_id integer not null,
+                    status varchar not null,
                     
-                    con_med int not null,
-                    tipo_lig varchar not null,
-                    tipo_tel varchar not null,
+                    tipo_ligacao varchar not null,
+                    tipo_telhado varchar not null,
                     
-                    mod varchar not null,
-                    fabr_mod varchar not null,
-                    pot_mod int not null,
-                    peso_mod float not null,
-                    inv1 varchar not null,
-                    fabr_inv1 varchar not null,
-                    pot_inv1 int not null,
-                    gar_inv1 int not null,
-                    inv2 varchar null,
-                    fabr_inv2 varchar null,
-                    pot_inv2 varchar null,
-                    gar_inv2 null,
+                    modelo_modulo varchar not null,
+                    fabricante_modulo varchar not null,
+                    potencia_modulo int not null,
+                    peso_modulo float not null,
+                    inversor1 varchar not null,
+                    fabricante_inversor1 varchar not null,
+                    potencia_inversor1 int not null,
+                    garantia_inversor1 int not null,
+                    
+                    inversor2 varchar null,
+                    fabricante_inversor2 varchar null,
+                    potencia_inversor2 int null,
+                    garantia_inversor2 int null,
                     
                     foreign key (cliente_id) references clientes (id)
                 );

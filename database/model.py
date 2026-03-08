@@ -43,7 +43,7 @@ class Model:
         try:
             con = self.con.get_conexao()
             cursor = con.cursor()
-            cursor.execute(sql)
+            cursor.execute(sql, lista)
             if cursor.rowcount == 1:
                 con.commit()
             con.close()
