@@ -110,6 +110,15 @@ def dadosFinanceiros(valor_do_kit: float, custo_material_projeto: float, lucro: 
         "lucro_liquido": lucro_liquido
     }
     
+    
+def financiamento(valor_financiado: float, taxa_ao_mes: float):
+    pagamentos = {}
+    taxa = taxa_ao_mes / 100
+    for meses in [12, 24, 36, 48, 60]:
+        parcela = (valor_financiado * taxa) / (1 - (1 + taxa)**-meses)
+        pagamentos[f"{meses}"] = round(parcela, 2)
+    return pagamentos
+
 #teste
 #valor_do_kit = float(input())
 #custo_material_projeto = float(input())
