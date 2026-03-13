@@ -39,7 +39,6 @@ python manage.py makemigrations --check --dry-run
 pytest apps/ -v
 ```
 
-
 ### Requisitos de Qualidade
 
 - ✅ Ruff linting sem erros

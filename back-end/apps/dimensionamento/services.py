@@ -1,138 +1,229 @@
-# TODO: implementar a lógica de negócio de dimensionamento aqui
-# As views devem APENAS chamar funções deste arquivo; não coloque regras de negócio nas views
+from decimal import ROUND_HALF_UP, Decimal
+
+from .geolocation import EstacaoSolar, GeoLocationService
+from .reference_data import (
+    PARAMETROS_FINANCEIROS_PADRAO,
+    obter_fator_perda_por_uf,
+)
 
 
-# TODO: definir a função principal de cálculo
-# Exemplo de estrutura:
-#
-#def calcular_dimensionamento(dados: dict) -> dict:
+class DimensionamentoOrcamentoService:
+    """Serviço principal para cálculo de dimensionamento e orçamento."""
 
-    #Recebe os dados de entrada e retorna o resultado do dimensionamento.
+    PRAZOS_FINANCIAMENTO = (12, 24, 36, 48, 60)
 
-    #Args:
-        #dados: dicionário com os parâmetros necessários
+    def __init__(
+        self,
+        consumos_mensais,
+        irradiacao_media_cidade,
+        fator_perda_decimal,
+        custo_kit,
+        custo_adicionais,
+        margem_lucro_decimal,
+        imposto_servico_decimal,
+        taxa_juros_mensal_decimal,
+    ):
+        self.consumos_mensais = [self._to_decimal(v) for v in consumos_mensais]
+        self.irradiacao_media_cidade = self._to_decimal(irradiacao_media_cidade)
+        self.fator_perda_decimal = self._to_decimal(fator_perda_decimal)
+        self.custo_kit = self._to_decimal(custo_kit)
+        self.custo_adicionais = self._to_decimal(custo_adicionais)
+        self.margem_lucro_decimal = self._to_decimal(margem_lucro_decimal)
+        self.imposto_servico_decimal = self._to_decimal(imposto_servico_decimal)
+        self.taxa_juros_mensal_decimal = self._to_decimal(taxa_juros_mensal_decimal)
 
-    #Returns:
-        #dicionário com os resultados calculados
+        self._validar_entrada()
 
-    #TODO: discutir fórmulas e parâmetros na reunião de equipe
+    @staticmethod
+    def _to_decimal(valor):
+        return Decimal(str(valor))
 
-    #pass
+    @staticmethod
+    def _round_money(valor):
+        return valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def _validar_entrada(self):
+        if len(self.consumos_mensais) != 12:
+            raise ValueError("consumos_mensais deve conter exatamente 12 valores.")
+
+        if any(v < 0 for v in self.consumos_mensais):
+            raise ValueError("consumos_mensais não pode conter valores negativos.")
+
+        if self.irradiacao_media_cidade <= 0:
+            raise ValueError("irradiacao_media_cidade deve ser maior que zero.")
+
+        if self.fator_perda_decimal < 0 or self.fator_perda_decimal >= 1:
+            raise ValueError("fator_perda_decimal deve estar entre 0 e menor que 1.")
+
+        if self.custo_kit < 0 or self.custo_adicionais < 0:
+            raise ValueError("custos não podem ser negativos.")
+
+        if (
+            self.margem_lucro_decimal < 0
+            or self.imposto_servico_decimal < 0
+            or self.taxa_juros_mensal_decimal < 0
+        ):
+            raise ValueError("margem, imposto e taxa de juros não podem ser negativos.")
+
+    def calcular(self):
+        # Passo A: Cálculo de Consumo e Potência
+        consumo_medio_mensal = sum(self.consumos_mensais) / Decimal("12")
+        consumo_medio_diario = consumo_medio_mensal / Decimal("30")
+
+        denominador = self.irradiacao_media_cidade * (
+            Decimal("1") - self.fator_perda_decimal
+        )
+        if denominador <= 0:
+            raise ValueError("Denominador inválido no cálculo de potência mínima.")
+
+        # potencia_minima_sistema_kwp = consumo_medio_diario /
+        # (irradiacao_media_cidade * (1 - fator_perda_decimal))
+        potencia_minima_sistema_kwp = consumo_medio_diario / denominador
+
+        # Passo B: Composição Financeira e Orçamento
+        # valor_lucro_bruto = custo_kit * margem_lucro_decimal
+        valor_lucro_bruto = self.custo_kit * self.margem_lucro_decimal
+
+        # valor_total_sistema = custo_kit + custo_adicionais + valor_lucro_bruto
+        valor_total_sistema = self.custo_kit + self.custo_adicionais + valor_lucro_bruto
+
+        # lucro_liquido_empresa = valor_lucro_bruto -
+        # (valor_lucro_bruto * imposto_servico_decimal)
+        lucro_liquido_empresa = valor_lucro_bruto - (
+            valor_lucro_bruto * self.imposto_servico_decimal
+        )
+
+        # Passo C: Financiamento (Tabela Price)
+        financiamento_parcelas = self._calcular_financiamento_price(valor_total_sistema)
+
+        return {
+            "potencia_calculada_kwp": float(
+                self._round_money(potencia_minima_sistema_kwp)
+            ),
+            "valor_total_sistema": float(self._round_money(valor_total_sistema)),
+            "lucro_liquido_empresa": float(self._round_money(lucro_liquido_empresa)),
+            "financiamento_parcelas": financiamento_parcelas,
+        }
+
+    def _calcular_financiamento_price(self, valor_presente):
+        parcelas = {}
+        taxa = self.taxa_juros_mensal_decimal
+
+        for meses in self.PRAZOS_FINANCIAMENTO:
+            if taxa == 0:
+                pmt = valor_presente / Decimal(meses)
+            else:
+                fator = (Decimal("1") + taxa) ** meses
+                denominador = fator - Decimal("1")
+                if denominador == 0:
+                    raise ValueError("Divisão por zero no cálculo da Tabela Price.")
+
+                # PMT = PV * ((i * (1 + i)^n) / ((1 + i)^n - 1))
+                pmt = valor_presente * ((taxa * fator) / denominador)
+
+            parcelas[str(meses)] = float(self._round_money(pmt))
+
+        return parcelas
 
 
-def configuracao():
-    configuracoes = {}
+class DimensionamentoComGeolocalizacaoService:
+    """Orquestra referência geográfica e cálculo financeiro do dimensionamento."""
 
-    #Precificação
-    configuracoes["precificacao"] = {
-        "preco_kit_por_watt": None,  
-        "custo_instalacao": None,  
-        "tarifa_energia": None  
-    }
+    def __init__(self, geolocation_service: GeoLocationService | None = None):
+        self.geolocation_service = geolocation_service or GeoLocationService()
 
-    #Parâmetros do sistema solar
-    configuracoes["parametros_sistema_solar"] = {
-        "potencia_painel": None, 
-        "area_por_painel": None,  
-        "eficiencia_sistema": None,  
-        "irradiacao_solar": None 
-    }
+    @staticmethod
+    def _resolver_parametros_financeiros(
+        custo_kit: float | None,
+        custo_adicionais: float | None,
+        margem_lucro_decimal: float | None,
+        imposto_servico_decimal: float | None,
+        taxa_juros_mensal_decimal: float | None,
+    ) -> dict[str, float]:
+        return {
+            "custo_kit": (
+                custo_kit
+                if custo_kit is not None
+                else float(PARAMETROS_FINANCEIROS_PADRAO["custo_kit"])
+            ),
+            "custo_adicionais": (
+                custo_adicionais
+                if custo_adicionais is not None
+                else float(PARAMETROS_FINANCEIROS_PADRAO["custo_adicionais"])
+            ),
+            "margem_lucro_decimal": (
+                margem_lucro_decimal
+                if margem_lucro_decimal is not None
+                else float(PARAMETROS_FINANCEIROS_PADRAO["margem_lucro_decimal"])
+            ),
+            "imposto_servico_decimal": (
+                imposto_servico_decimal
+                if imposto_servico_decimal is not None
+                else float(PARAMETROS_FINANCEIROS_PADRAO["imposto_servico_decimal"])
+            ),
+            "taxa_juros_mensal_decimal": (
+                taxa_juros_mensal_decimal
+                if taxa_juros_mensal_decimal is not None
+                else float(PARAMETROS_FINANCEIROS_PADRAO["taxa_juros_mensal_decimal"])
+            ),
+        }
 
-    #Responsável pela proposta
-    configuracoes["dados_responsavel"] = {
-        "nome_responsavel": None,  
-        "contato_responsavel": None  
-    }
+    def calcular_orcamento(
+        self,
+        consumo_kwh_mes: float,
+        uf: str,
+        latitude_cliente: float,
+        longitude_cliente: float,
+        estacoes_solares: list[EstacaoSolar],
+        custo_kit: float | None = None,
+        custo_adicionais: float | None = None,
+        margem_lucro_decimal: float | None = None,
+        imposto_servico_decimal: float | None = None,
+        taxa_juros_mensal_decimal: float | None = None,
+    ) -> dict:
+        parametros = self._resolver_parametros_financeiros(
+            custo_kit=custo_kit,
+            custo_adicionais=custo_adicionais,
+            margem_lucro_decimal=margem_lucro_decimal,
+            imposto_servico_decimal=imposto_servico_decimal,
+            taxa_juros_mensal_decimal=taxa_juros_mensal_decimal,
+        )
 
-    return configuracoes
+        fator_perda_decimal = obter_fator_perda_por_uf(uf)
 
-def novo_orcamento():
-    novo_orcamento = {}
+        estacao_proxima, distancia_km = (
+            self.geolocation_service.buscar_estacao_mais_proxima(
+                latitude_cliente,
+                longitude_cliente,
+                estacoes_solares,
+            )
+        )
+        irradiacao_media_cidade = estacao_proxima.irradiacao
+        inclinacao_ideal_graus = self.geolocation_service.calcular_inclinacao_ideal(
+            latitude_cliente
+        )
 
-    #Dados do cliente
-    novo_orcamento['dados_do_cliente'] = {
-        'nome_completo': None,  
-        'estado': None,  
-        'cidade': None,  
-        'telefone_whatsapp': None 
-    }
+        service = DimensionamentoOrcamentoService(
+            consumos_mensais=[consumo_kwh_mes] * 12,
+            irradiacao_media_cidade=irradiacao_media_cidade,
+            fator_perda_decimal=fator_perda_decimal,
+            custo_kit=parametros["custo_kit"],
+            custo_adicionais=parametros["custo_adicionais"],
+            margem_lucro_decimal=parametros["margem_lucro_decimal"],
+            imposto_servico_decimal=parametros["imposto_servico_decimal"],
+            taxa_juros_mensal_decimal=parametros["taxa_juros_mensal_decimal"],
+        )
+        resultado = service.calcular()
 
-    #Dados técnicos
-    novo_orcamento['dados_tecnicos'] = {
-        'consumo_medio_mensal': None,  
-        'tipo_de_ligacao': None,  
-        'tipo_de_telhado': None 
-    }
-
-    #Dados do produto
-    novo_orcamento['dados_do_produto'] = {
-        'modelo_do_modulo': None, 
-        'fabricante_do_modulo': None, 
-        'potencia_do_modulo': None, 
-        'peso_do_modulo': None,  
-        'modelo_do_inversor_1': None,  
-        'fabricante_do_inversor_1': None,  
-        'potencia_do_inversor_1': None, 
-        'garantia_do_inversor_1': None,  
-        'modelo_do_inversor_2': None, 
-        'fabricante_do_inversor_2': None, 
-        'potencia_do_inversor_2': None, 
-        'garantia_do_inversor_2': None 
-    }
-
-    return novo_orcamento
-
-def dadosFinanceiros(valor_do_kit: float, custo_material_projeto: float, lucro: float, imposto_sobre_servico: float):
-    """
-    Calcula os dados financeiros do sistema.
-
-    Args:
-        valor_do_kit (float): Valor do kit.
-        custo_material_projeto (float): Custo do material do projeto.
-        lucro (float): Percentual de lucro.
-        imposto_sobre_servico (float): Percentual de imposto sobre o serviço.
-
-    Returns:
-        dict: Dicionário contendo os valores calculados.
-    """
-    valor_do_lucro = valor_do_kit * (lucro / 100)
-    valor_total_sistema = valor_do_kit + valor_do_lucro + custo_material_projeto
-    lucro_liquido = valor_do_lucro - (valor_do_lucro * (imposto_sobre_servico / 100))
-
-    # Retorna os dados financeiros calculados
-    return {
-        "valor_do_kit": valor_do_kit,
-        "custo_material_projeto": custo_material_projeto,
-        "lucro": lucro,
-        "imposto_sobre_servico": imposto_sobre_servico,
-        "valor_do_lucro": valor_do_lucro,
-        "valor_total_sistema": valor_total_sistema,
-        "lucro_liquido": lucro_liquido
-    }
-    
-    
-def financiamento(valor_financiado: float, taxa_ao_mes: float):
-    pagamentos = {}
-    taxa = taxa_ao_mes / 100
-    for meses in [12, 24, 36, 48, 60]:
-        parcela = (valor_financiado * taxa) / (1 - (1 + taxa)**-meses)
-        pagamentos[f"{meses}"] = round(parcela, 2)
-    return pagamentos
-
-#teste
-#valor_do_kit = float(input())
-#custo_material_projeto = float(input())
-#lucro = float(input())
-#imposto_sobre_servico = float(input())
-
-#valor_do_lucro = valor_do_kit * (lucro / 100)
-#valor_total_sistema = valor_do_kit + valor_do_lucro + custo_material_projeto
-#lucro_liquido = valor_do_lucro - (valor_do_lucro * (imposto_sobre_servico / 100))
-
-#print(valor_do_kit)
-#print(custo_material_projeto)
-#print(lucro)
-#print(imposto_sobre_servico)
-#print(valor_do_lucro)
-#print(valor_total_sistema)
-#print(lucro_liquido)
+        return {
+            "uf": uf.upper(),
+            "fator_perda_decimal": float(fator_perda_decimal),
+            "irradiacao_media_cidade": float(irradiacao_media_cidade),
+            "inclinacao_ideal_graus": round(float(inclinacao_ideal_graus), 2),
+            "estacao_mais_proxima": {
+                "id": estacao_proxima.id,
+                "distancia_km": round(float(distancia_km), 2),
+            },
+            "parametros_financeiros_utilizados": parametros,
+            **resultado,
+        }

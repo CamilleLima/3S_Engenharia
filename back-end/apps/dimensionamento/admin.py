@@ -1,15 +1,18 @@
 from django.contrib import admin
 
-# TODO: importar e registrar modelos após defini-los em models.py
-# from .models import ...
+from .models import Dimensionamento
 
 
-# TODO: criar classes ModelAdmin para personalizar o painel do Django Admin
-# Exemplo:
-#
-# @admin.register(ExampleModel)
-# class ExampleModelAdmin(admin.ModelAdmin):
-#     list_display = []
-#     search_fields = []
-#     list_filter = []
-
+@admin.register(Dimensionamento)
+class DimensionamentoAdmin(admin.ModelAdmin):
+    list_display = [
+        "id",
+        "cliente",
+        "potencia_calculada_kwp",
+        "valor_total_sistema",
+        "lucro_liquido_empresa",
+        "created_at",
+    ]
+    search_fields = ["cliente__nome", "cliente__cpf"]
+    list_filter = ["created_at", "cliente__cidade", "cliente__estado"]
+    readonly_fields = ["created_at", "updated_at"]

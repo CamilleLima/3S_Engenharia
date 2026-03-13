@@ -105,17 +105,20 @@ class ClienteSerializer(serializers.ModelSerializer):
         """
         Sobrescreve create para buscar endereço via CEP automaticamente.
         """
-        cep = validated_data.get("cep")
+        campos_endereco = ["rua", "bairro", "cidade", "estado"]
+        endereco_incompleto = any(
+            not str(validated_data.get(campo, "")).strip()
+            for campo in campos_endereco
+        )
 
-        # Busca endereço via ViaCEP
-        endereco = buscar_endereco_por_cep(cep)
+        if endereco_incompleto:
+            cep = validated_data.get("cep")
+            endereco = buscar_endereco_por_cep(cep)
 
-        # Sobrescreve os campos de endereço com os dados da API
-        # (exceto se o usuário forneceu explicitamente)
-        validated_data.setdefault("rua", endereco["rua"])
-        validated_data.setdefault("bairro", endereco["bairro"])
-        validated_data.setdefault("cidade", endereco["cidade"])
-        validated_data.setdefault("estado", endereco["estado"])
+            validated_data.setdefault("rua", endereco["rua"])
+            validated_data.setdefault("bairro", endereco["bairro"])
+            validated_data.setdefault("cidade", endereco["cidade"])
+            validated_data.setdefault("estado", endereco["estado"])
 
         return super().create(validated_data)
 
@@ -124,9 +127,14 @@ class ClienteSerializer(serializers.ModelSerializer):
         Sobrescreve update para buscar endereço via CEP se o CEP foi alterado.
         """
         cep = validated_data.get("cep", instance.cep)
+        campos_endereco = ["rua", "bairro", "cidade", "estado"]
+        endereco_incompleto = any(
+            not str(validated_data.get(campo, getattr(instance, campo, ""))).strip()
+            for campo in campos_endereco
+        )
 
-        # Se o CEP foi alterado, busca novo endereço
-        if cep != instance.cep:
+        # Se o CEP foi alterado ou o endereço estiver incompleto, busca endereço
+        if cep != instance.cep or endereco_incompleto:
             endereco = buscar_endereco_por_cep(cep)
 
             # Atualiza os campos de endereço com os dados da API
