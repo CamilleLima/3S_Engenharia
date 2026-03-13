@@ -1,1 +1,143 @@
-"""\nDjango Base Settings — 3S Engenharia\nConfigurações compartilhadas entre todos os ambientes.\n"""\nimport os\nfrom pathlib import Path\n\n# BASE_DIR aponta para back-end/\nBASE_DIR = Path(__file__).resolve().parent.parent.parent\n\nSECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")\n\nDEBUG = False\n\nALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")\n\n# ---------------------------------------------------------------------------\n# Aplicações\n# ---------------------------------------------------------------------------\nDJANGO_APPS = [\n    "django.contrib.admin",\n    "django.contrib.auth",\n    "django.contrib.contenttypes",\n    "django.contrib.sessions",\n    "django.contrib.messages",\n    "django.contrib.staticfiles",\n]\n\nTHIRD_PARTY_APPS = [\n    "rest_framework",\n    "corsheaders",\n]\n\nLOCAL_APPS = [\n    "apps.clientes",\n    "apps.dimensionamento",\n    "apps.financeiro",\n    "apps.documentos",\n]\n\nINSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS\n\n# ---------------------------------------------------------------------------\n# Middleware\n# ---------------------------------------------------------------------------\nMIDDLEWARE = [\n    "django.middleware.security.SecurityMiddleware",\n    "corsheaders.middleware.CorsMiddleware",\n    "django.contrib.sessions.middleware.SessionMiddleware",\n    "django.middleware.common.CommonMiddleware",\n    "django.middleware.csrf.CsrfViewMiddleware",\n    "django.contrib.auth.middleware.AuthenticationMiddleware",\n    "django.contrib.messages.middleware.MessageMiddleware",\n    "django.middleware.clickjacking.XFrameOptionsMiddleware",\n]\n\nROOT_URLCONF = "backend_django.urls"\n\nTEMPLATES = [\n    {\n        "BACKEND": "django.template.backends.django.DjangoTemplates",\n        "DIRS": [],\n        "APP_DIRS": True,\n        "OPTIONS": {\n            "context_processors": [\n                "django.template.context_processors.request",\n                "django.contrib.auth.context_processors.auth",\n                "django.contrib.messages.context_processors.messages",\n            ],\n        },\n    },\n]\n\nWSGI_APPLICATION = "backend_django.wsgi.application"\n\n# ---------------------------------------------------------------------------\n# Validação de senha\n# ---------------------------------------------------------------------------\nAUTH_PASSWORD_VALIDATORS = [\n    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},\n    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},\n    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},\n    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},\n]\n\n# ---------------------------------------------------------------------------\n# Internacionalização\n# ---------------------------------------------------------------------------\nLANGUAGE_CODE = "pt-br"\nTIME_ZONE = "America/Rio_Branco"\nUSE_I18N = True\nUSE_TZ = True\n\n# ---------------------------------------------------------------------------\n# Arquivos estáticos e de mídia\n# ---------------------------------------------------------------------------\nSTATIC_URL = "static/"\nSTATIC_ROOT = BASE_DIR / "staticfiles"\n\nMEDIA_URL = "media/"\nMEDIA_ROOT = BASE_DIR / "media"\n\nDEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"\n\n# ---------------------------------------------------------------------------\n# Django REST Framework\n# ---------------------------------------------------------------------------\nREST_FRAMEWORK = {\n    "DEFAULT_RENDERER_CLASSES": [\n        "rest_framework.renderers.JSONRenderer",\n    ],\n    "DEFAULT_PERMISSION_CLASSES": [\n        "rest_framework.permissions.IsAuthenticated",\n    ],\n    "DEFAULT_AUTHENTICATION_CLASSES": [\n        "rest_framework.authentication.SessionAuthentication",\n    ],\n}\n
+"""
+Django Base Settings — 3S Engenharia
+Configurações compartilhadas entre todos os ambientes.
+"""
+
+import os
+from pathlib import Path
+
+# BASE_DIR aponta para back-end/
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "change-me-in-production")
+
+DEBUG = False
+
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
+
+# ---------------------------------------------------------------------------
+# Aplicações
+# ---------------------------------------------------------------------------
+DJANGO_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+]
+
+THIRD_PARTY_APPS = [
+    "rest_framework",
+    "corsheaders",
+]
+
+LOCAL_APPS = [
+    "apps.clientes",
+    "apps.dimensionamento",
+    "apps.financeiro",
+    "apps.documentos",
+]
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+
+# ---------------------------------------------------------------------------
+# Middleware
+# ---------------------------------------------------------------------------
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+
+ROOT_URLCONF = "backend_django.urls"
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = "backend_django.wsgi.application"
+
+# ---------------------------------------------------------------------------
+# Password validation
+# ---------------------------------------------------------------------------
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+# ---------------------------------------------------------------------------
+# Internacionalização
+# ---------------------------------------------------------------------------
+LANGUAGE_CODE = "pt-br"
+
+TIME_ZONE = "America/Rio_Branco"
+
+USE_I18N = True
+
+USE_TZ = True
+
+# ---------------------------------------------------------------------------
+# Arquivos estáticos
+# ---------------------------------------------------------------------------
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# ---------------------------------------------------------------------------
+# Django REST Framework
+# ---------------------------------------------------------------------------
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        # Projeto sem tela de login/autenticação.
+        # A aplicação é utilizada por um único operador no fluxo interno.
+        "rest_framework.permissions.AllowAny",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+}
+
+# ---------------------------------------------------------------------------
+# CORS
+# ---------------------------------------------------------------------------
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+
+# ---------------------------------------------------------------------------
+# Default primary key field type
+# ---------------------------------------------------------------------------
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

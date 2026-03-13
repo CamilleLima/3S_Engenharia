@@ -9,7 +9,7 @@ Sistema web para automação da engenharia de vendas da 3S Engenharia, cobrindo 
 | Camada | Stack |
 | -------- | ------- |
 | Back-end | Python 3.10+, Django 5.2, Django REST Framework |
-| Qualidade (Python) | Ruff 0.9 (lint + format), pytest, pytest-django, pytest-cov |
+| Qualidade (Python) | Ruff 0.9 (lint + format), pytest, pytest-django |
 | Banco de dados | SQLite (dev) → PostgreSQL (produção) |
 | Front-end | React 18, Vite 5, Tailwind CSS 3 |
 | Roteamento | React Router DOM 6 |
@@ -54,6 +54,24 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+### Testes e Qualidade de Código
+
+```bash
+# Executar todos os testes
+pytest apps/ -v
+
+# Verificar qualidade do código (linting)
+ruff check apps/ backend_django/
+
+# Formatar código automaticamente
+ruff format apps/ backend_django/
+
+# Verificar migrations pendentes
+python manage.py makemigrations --check --dry-run
+```
+
+**CI/CD:** Testes automáticos via GitHub Actions
+
 ---
 
 ## Front-end — Início rápido
@@ -85,7 +103,7 @@ npm run dev
 │   ├── manage.py
 │   ├── requirements.txt
 │   ├── pyproject.toml         # Ruff (lint + format)
-│   ├── setup.cfg              # pytest + coverage
+│   ├── setup.cfg              # pytest
 │   ├── .env.example
 │   ├── backend_django/
 │   │   ├── settings/

@@ -10,6 +10,7 @@ python-dotenv==1.1.0
 psycopg2-binary==2.9.10       # driver PostgreSQL
 whitenoise==6.9.0             # serve arquivos estáticos (front-end/dist) em produção
 gunicorn==23.0.0              # servidor WSGI para produção
+requests==2.31.0              # HTTP client para integração com APIs externas (ViaCEP)
 
 # --- Geração de PDF (etapa futura) ---
 # reportlab==4.2.5
@@ -21,4 +22,4 @@ ruff==0.9.10                  # linting + formatação (substitui black, flake8,
 # --- Testes ---
 pytest==8.3.5
 pytest-django==4.10.0
-pytest-cov==6.1.0             # cobertura de testes
+responses==0.25.0             # mock de requisições HTTP nos testes

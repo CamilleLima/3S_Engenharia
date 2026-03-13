@@ -1,1 +1,46 @@
-"""\nDjango Settings — Desenvolvimento\nHerda de base.py e sobrescreve para uso local.\n\nUso:\n    DJANGO_SETTINGS_MODULE=backend_django.settings.development\n"""\nfrom .base import *  # noqa: F401, F403\n\nDEBUG = True\n\nSECRET_KEY = "django-insecure-dev-only-nao-usar-em-producao"  # noqa: S105\n\nALLOWED_HOSTS = ["localhost", "127.0.0.1"]\n\n# ---------------------------------------------------------------------------\n# Banco de dados — SQLite para desenvolvimento local\n# ---------------------------------------------------------------------------\nDATABASES = {\n    "default": {\n        "ENGINE": "django.db.backends.sqlite3",\n        "NAME": BASE_DIR / "db.sqlite3",  # noqa: F405\n    }\n}\n\n# ---------------------------------------------------------------------------\n# CORS — libera o servidor de desenvolvimento do Vite\n# ---------------------------------------------------------------------------\nCORS_ALLOWED_ORIGINS = [\n    "http://localhost:5173",\n    "http://127.0.0.1:5173",\n]\n\n# ---------------------------------------------------------------------------\n# DRF — habilita BrowsableAPI em desenvolvimento\n# ---------------------------------------------------------------------------\nREST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [  # noqa: F405\n    "rest_framework.renderers.JSONRenderer",\n    "rest_framework.renderers.BrowsableAPIRenderer",\n]\n\n# Remove exigência de autenticação em dev para facilitar testes manuais\nREST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = [  # noqa: F405\n    "rest_framework.permissions.AllowAny",\n]\n
+"""
+Django Settings — Desenvolvimento
+Herda de base.py e sobrescreve para uso local.
+
+Uso:
+    DJANGO_SETTINGS_MODULE=backend_django.settings.development
+"""
+
+from .base import *  # noqa: F401, F403
+
+DEBUG = True
+
+SECRET_KEY = "django-insecure-dev-only-nao-usar-em-producao"  # noqa: S105
+
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+
+# ---------------------------------------------------------------------------
+# Banco de dados — SQLite para desenvolvimento local
+# ---------------------------------------------------------------------------
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",  # noqa: F405
+    }
+}
+
+# ---------------------------------------------------------------------------
+# CORS — libera o servidor de desenvolvimento do Vite
+# ---------------------------------------------------------------------------
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# ---------------------------------------------------------------------------
+# DRF — habilita BrowsableAPI em desenvolvimento
+# ---------------------------------------------------------------------------
+REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = [  # noqa: F405
+    "rest_framework.renderers.JSONRenderer",
+    "rest_framework.renderers.BrowsableAPIRenderer",
+]
+
+# Remove exigência de autenticação em dev para facilitar testes manuais
+REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"] = [  # noqa: F405
+    "rest_framework.permissions.AllowAny",
+]

@@ -38,7 +38,6 @@ API REST construída com **Django 5.2** e **Django REST Framework**, responsáve
 | psycopg2-binary | 2.9 | Driver PostgreSQL (produção) |
 | ruff | 0.9 | Linting + formatação (substitui black, flake8, isort) |
 | pytest-django | 4.10 | Testes com Django |
-| pytest-cov | 6.1 | Cobertura de testes |
 
 ---
 
@@ -91,7 +90,7 @@ back-end/
 ├── manage.py                      # CLI do Django
 ├── requirements.txt               # dependências
 ├── pyproject.toml                 # configuração do Ruff
-├── setup.cfg                      # configuração do pytest e coverage
+├── setup.cfg                      # configuração do pytest
 ├── .env.example                   # template de variáveis de ambiente
 │
 ├── backend_django/                # core do projeto Django
@@ -263,13 +262,6 @@ pytest
 
 # Rodar testes de uma app específica
 pytest apps/clientes/tests/
-
-# Ver relatório de cobertura no terminal
-pytest --cov=apps --cov-report=term-missing
-
-# Gerar relatório HTML de cobertura
-pytest --cov=apps --cov-report=html
-# Abrir htmlcov/index.html no navegador
 ```
 
 **Convenção de nomenclatura:**
@@ -281,8 +273,6 @@ apps/<nome_da_app>/tests/
 ├── test_services.py    # testes de lógica de negócio
 └── test_views.py       # testes de endpoints (a criar por etapa)
 ```
-
-> A cobertura mínima configurada é **70%**. O CI deve falhar abaixo disso.
 
 ---
 

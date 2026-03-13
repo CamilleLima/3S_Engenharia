@@ -1,16 +1,19 @@
+"""
+URLs para o app clientes.
+"""
+
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-# TODO: importar ViewSets após defini-los em views.py
-# from .views import ...
+from .views import ClienteViewSet, VendedorViewSet
 
+app_name = "clientes"
+
+# Router DRF para gerar automaticamente as URLs dos ViewSets
 router = DefaultRouter()
-
-# TODO: registrar rotas no router após criar os ViewSets
-# Exemplo:
-# router.register(r"example", ExampleViewSet, basename="example")
+router.register(r"vendedores", VendedorViewSet, basename="vendedor")
+router.register(r"", ClienteViewSet, basename="cliente")
 
 urlpatterns = [
     path("", include(router.urls)),
 ]
-
