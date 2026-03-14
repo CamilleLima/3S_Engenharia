@@ -1,22 +1,32 @@
-# TODO: implementar a geração do PDF aqui
-# Este módulo é responsável por transformar os dados do relatório em um arquivo PDF
-# Avaliar biblioteca a ser usada: WeasyPrint, ReportLab, xhtml2pdf, etc.
+import tempfile
 
+from django.template.loader import render_to_string
+from weasyprint import HTML
 
-# TODO: definir a função principal de geração do PDF
-# Exemplo de estrutura:
-#
-# def gerar_pdf(dados_relatorio: dict) -> bytes:
-#     """
-#     Recebe os dados do relatório e retorna o conteúdo do PDF em bytes.
-#
-#     Args:
-#         dados_relatorio: dicionário retornado por relatorio.gerar_relatorio()
-#
-#     Returns:
-#         bytes do arquivo PDF gerado
-#
-#     TODO: definir biblioteca e template HTML/PDF na reunião de equipe
-#     """
-#     pass
+# TODO: implementar a lógica de geração de PDF aqui
 
+def gerar_proposta_pdf(dados_proposta: dict) -> str:
+    """
+    Recebe os dados consolidados da proposta, renderiza um template HTML
+    e o converte para um arquivo PDF usando WeasyPrint.
+
+    Args:
+        dados_proposta (dict): Dicionário completo retornado por `gerar_dados_relatorio`,
+                               incluindo os campos editáveis.
+
+    Returns:
+        str: O caminho para o arquivo PDF temporário gerado.
+             A view que chama esta função é responsável por limpar o arquivo.
+    """
+    # 1. Renderiza o template HTML com os dados da proposta
+    html_string = render_to_string("documentos/proposta.html", dados_proposta)
+
+    # 2. Cria um arquivo temporário para salvar o PDF
+    # Usamos delete=False para que o arquivo não seja apagado ao ser fechado.
+    pdf_file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
+
+    # 3. Gera o PDF a partir do HTML renderizado e o salva no caminho do arquivo temporário
+    # WeasyPrint consegue resolver caminhos de arquivos locais passados no HTML.
+    HTML(string=html_string).write_pdf(pdf_file.name)
+
+    return pdf_file.name
