@@ -1,4 +1,4 @@
-import { Sun } from "lucide-react";
+import { Settings, Sun } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 export default function Header() {
@@ -65,6 +65,20 @@ export default function Header() {
               </NavLink>
             </nav>
           </div>
+
+          <NavLink
+            to="/configuracoes"
+            className={({ isActive }) =>
+              `p-2 rounded-lg transition-colors ${
+                isActive
+                  ? "bg-orange-100 text-orange-600"
+                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              }`
+            }
+            title="Configurações"
+          >
+            <Settings className="w-5 h-5" />
+          </NavLink>
         </div>
       </div>
     </header>

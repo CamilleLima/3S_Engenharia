@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 
 import MainLayout from "./components/layout/MainLayout.tsx";
 import Dashboard from "./pages/Dashboard/index.tsx";
+import Configuracoes from "./pages/Configuracoes/index.tsx";
 import Documentos from "./pages/Documentos/index.tsx";
 import Financeiro from "./pages/Financeiro/index.tsx";
 import FormularioProposta from "./pages/FormularioProposta/index.tsx";
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="novo-orcamento" element={<FormularioProposta />} />
             <Route path="financeiro" element={<Financeiro />} />
             <Route path="documentos" element={<Documentos />} />
+            <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="proposta/:id" element={<PropostaDetalhes />} />
           </Route>
 

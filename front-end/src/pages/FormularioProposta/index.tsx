@@ -30,6 +30,7 @@ import {
   calcularFinanceiro,
   type FinanceiroResposta,
 } from "../../services/financeiroService.ts";
+import { loadConfiguracoes } from "../../services/configuracoesService.ts";
 import {
   brazilianStates,
   citiesByState,
@@ -68,11 +69,6 @@ interface SellerFormData {
 interface DimensionamentoFormData {
   latitudeCliente: string;
   longitudeCliente: string;
-  custoKit: string;
-  custoAdicionais: string;
-  margemLucroDecimal: string;
-  impostoServicoDecimal: string;
-  taxaJurosMensalDecimal: string;
 }
 
 interface FinanceiroFormData {
@@ -106,16 +102,6 @@ const initialSellerForm: SellerFormData = {
 const initialDimensionamentoForm: DimensionamentoFormData = {
   latitudeCliente: "",
   longitudeCliente: "",
-  custoKit: "",
-  custoAdicionais: "",
-  margemLucroDecimal: "",
-  impostoServicoDecimal: "",
-  taxaJurosMensalDecimal: "",
-};
-
-const initialFinanceiroForm: FinanceiroFormData = {
-  tarifaEnergiaKwh: "0.95",
-  custoDisponibilidadeRs: "50",
 };
 
 function digitsOnly(value: string) {
@@ -177,6 +163,7 @@ function extractFirstErrorMessage(detail: unknown): string | null {
 
 export default function FormularioProposta() {
   const navigate = useNavigate();
+  const configuracoesGlobais = useMemo(() => loadConfiguracoes(), []);
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [ultimoOrcamento, setUltimoOrcamento] =
     useState<OrcamentoEtapasResposta | null>(null);
@@ -187,9 +174,10 @@ export default function FormularioProposta() {
   const [dimensionamentoData, setDimensionamentoData] = useState<DimensionamentoFormData>(
     initialDimensionamentoForm
   );
-  const [financeiroData, setFinanceiroData] = useState<FinanceiroFormData>(
-    initialFinanceiroForm
-  );
+  const [financeiroData, setFinanceiroData] = useState<FinanceiroFormData>(() => ({
+    tarifaEnergiaKwh: configuracoesGlobais.energyRate.toString(),
+    custoDisponibilidadeRs: "50",
+  }));
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [sellerMode, setSellerMode] = useState<SellerMode>("existing");
   const [sellers, setSellers] = useState<Vendedor[]>([]);
@@ -386,7 +374,10 @@ export default function FormularioProposta() {
     setFormData(initialClientForm);
     setSellerData(initialSellerForm);
     setDimensionamentoData(initialDimensionamentoForm);
-    setFinanceiroData(initialFinanceiroForm);
+    setFinanceiroData({
+      tarifaEnergiaKwh: loadConfiguracoes().energyRate.toString(),
+      custoDisponibilidadeRs: "50",
+    });
     if (hasExistingSellers) {
       setSellerMode("existing");
       setSelectedSellerId(String(sellers[0].id));
@@ -417,15 +408,6 @@ export default function FormularioProposta() {
     uf: formData.state,
     latitude_cliente: Number(dimensionamentoData.latitudeCliente),
     longitude_cliente: Number(dimensionamentoData.longitudeCliente),
-    custo_kit: parseOptionalNumber(dimensionamentoData.custoKit),
-    custo_adicionais: parseOptionalNumber(dimensionamentoData.custoAdicionais),
-    margem_lucro_decimal: parseOptionalNumber(dimensionamentoData.margemLucroDecimal),
-    imposto_servico_decimal: parseOptionalNumber(
-      dimensionamentoData.impostoServicoDecimal
-    ),
-    taxa_juros_mensal_decimal: parseOptionalNumber(
-      dimensionamentoData.taxaJurosMensalDecimal
-    ),
   });
 
   const buildFinanceiroPayload = (dimensionamentoId: number) => ({
@@ -906,87 +888,14 @@ export default function FormularioProposta() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Custo do Kit (opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={dimensionamentoData.custoKit}
-                    onChange={(e) => updateDimensionamento("custoKit", e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Ex: 12200"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Custos Adicionais (opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={dimensionamentoData.custoAdicionais}
-                    onChange={(e) =>
-                      updateDimensionamento("custoAdicionais", e.target.value)
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Ex: 2000"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Margem Lucro (decimal, opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={dimensionamentoData.margemLucroDecimal}
-                    onChange={(e) =>
-                      updateDimensionamento("margemLucroDecimal", e.target.value)
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Ex: 0.35"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Imposto Serviço (decimal, opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={dimensionamentoData.impostoServicoDecimal}
-                    onChange={(e) =>
-                      updateDimensionamento("impostoServicoDecimal", e.target.value)
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Ex: 0.07"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Taxa Juros Mensal (decimal, opcional)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    min="0"
-                    value={dimensionamentoData.taxaJurosMensalDecimal}
-                    onChange={(e) =>
-                      updateDimensionamento("taxaJurosMensalDecimal", e.target.value)
-                    }
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Ex: 0.009"
-                  />
+                <div className="md:col-span-2 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                  <p className="font-medium">Campos definidos automaticamente pelo backend</p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-blue-800">
+                    <li>Irradiação média da cidade e estação mais próxima via latitude/longitude</li>
+                    <li>Fator de perda pela UF do cliente</li>
+                    <li>Inclinação ideal pela latitude do cliente</li>
+                    <li>Potência calculada, valor total, lucro líquido e parcelas pelo serviço de dimensionamento</li>
+                  </ul>
                 </div>
 
                 <div className="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
@@ -1000,20 +909,17 @@ export default function FormularioProposta() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Tarifa de Energia (R$/kWh) *
+                        Tarifa de Energia Global
                       </label>
-                      <input
-                        type="number"
-                        step="0.0001"
-                        min="0.0001"
-                        value={financeiroData.tarifaEnergiaKwh}
-                        onChange={(e) =>
-                          updateFinanceiro("tarifaEnergiaKwh", e.target.value)
-                        }
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        placeholder="Ex: 0.95"
-                        required
-                      />
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+                        {Number(financeiroData.tarifaEnergiaKwh).toLocaleString("pt-BR", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 4,
+                        })} R$/kWh
+                        <p className="mt-1 text-xs text-gray-500">
+                          Valor carregado automaticamente da tela de Configurações.
+                        </p>
+                      </div>
                     </div>
 
                     <div>
