@@ -29,30 +29,48 @@ class TestDocumentos:
         assert dados["economia_mensal_rs"] == 234.85
         assert dados["texto_adicional"] == "Observação teste"
 
-    def test_gerar_pdf_com_mock_weasyprint(self, monkeypatch):
+    def test_gerar_pdf_com_xhtml2pdf(self, monkeypatch):
+        """Garante que gerar_proposta_pdf usa xhtml2pdf por padrão."""
         import os
 
         from apps.documentos.generators.pdf import gerar_proposta_pdf
 
-        class FakeHTML:
-            def __init__(self, string):
-                self.string = string
+        monkeypatch.setattr(
+            "apps.documentos.generators.pdf.render_to_string",
+            lambda _template, _ctx: "<html><body><p>Proposta Teste</p></body></html>",
+        )
 
-            def write_pdf(self, path):
-                with open(path, "wb") as pdf_file:
-                    pdf_file.write(b"%PDF-1.4 fake")
+        pdf_path = gerar_proposta_pdf({"nome_cliente": "Cliente X"})
 
-        class FakeWeasyPrintModule:
-            HTML = FakeHTML
+        try:
+            assert pdf_path.endswith(".pdf")
+            with open(pdf_path, "rb") as generated_file:
+                content = generated_file.read()
+                assert content.startswith(b"%PDF")
+        finally:
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+
+    def test_gerar_pdf_fallback_weasyprint_quando_sem_xhtml2pdf(self, monkeypatch):
+        """Se xhtml2pdf não estiver disponível, tenta WeasyPrint."""
+        import os
+
+        from apps.documentos.generators import pdf as pdf_module
+        from apps.documentos.generators.pdf import gerar_proposta_pdf
+
+        def _fake_xhtml2pdf(html_string, pdf_path):
+            raise ImportError("xhtml2pdf indisponível")
+
+        def _fake_weasyprint(html_string, pdf_path):
+            with open(pdf_path, "wb") as f:
+                f.write(b"%PDF-1.4 fake-weasyprint")
 
         monkeypatch.setattr(
             "apps.documentos.generators.pdf.render_to_string",
             lambda _template, _ctx: "<html><body>ok</body></html>",
         )
-        monkeypatch.setattr(
-            "apps.documentos.generators.pdf.import_module",
-            lambda _name: FakeWeasyPrintModule,
-        )
+        monkeypatch.setattr(pdf_module, "_gerar_com_xhtml2pdf", _fake_xhtml2pdf)
+        monkeypatch.setattr(pdf_module, "_gerar_com_weasyprint", _fake_weasyprint)
 
         pdf_path = gerar_proposta_pdf({"nome_cliente": "Cliente X"})
 

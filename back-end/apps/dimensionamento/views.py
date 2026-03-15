@@ -148,10 +148,7 @@ class DashboardAPIView(APIView):
 
     @staticmethod
     def _status_efetivo(dimensionamento: Dimensionamento, has_financeiro: bool) -> str:
-        if (
-            dimensionamento.status == Dimensionamento.STATUS_PENDING
-            and has_financeiro
-        ):
+        if dimensionamento.status == Dimensionamento.STATUS_PENDING and has_financeiro:
             return Dimensionamento.STATUS_ACCEPTED
         return dimensionamento.status
 
@@ -202,9 +199,7 @@ class PropostaDetalheAPIView(APIView):
 
     def get(self, request, pk, *args, **kwargs):
         dimensionamento = (
-            Dimensionamento.objects.select_related("cliente")
-            .filter(pk=pk)
-            .first()
+            Dimensionamento.objects.select_related("cliente").filter(pk=pk).first()
         )
         if not dimensionamento:
             raise ValidationError({"detail": "Proposta não encontrada."})

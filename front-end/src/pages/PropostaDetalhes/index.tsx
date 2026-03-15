@@ -5,6 +5,7 @@ import {
   Calendar,
   DollarSign,
   Download,
+  FileText,
   XCircle,
   Sun,
   TrendingUp,
@@ -19,6 +20,7 @@ import {
   type PropostaStatus,
   type PropostaDetalhe,
 } from "../../services/propostaService.ts";
+import { gerarPdfProposta } from "../../services/documentosService.ts";
 import { formatarMoeda } from "../../utils/formatters.ts";
 
 function statusPillClass(status: "pending" | "accepted" | "rejected") {
@@ -47,6 +49,8 @@ export default function PropostaDetalhes() {
   const [isLoading, setIsLoading] = useState(true);
   const [proposta, setProposta] = useState<PropostaDetalhe | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
 
   useEffect(() => {
     async function carregarDetalhe() {
@@ -103,6 +107,35 @@ export default function PropostaDetalhes() {
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!proposta) {
+      return;
+    }
+
+    setIsExportingPdf(true);
+    try {
+      const blob = await gerarPdfProposta({
+        dimensionamento: proposta.dimensionamento.id,
+        calculo_financeiro: proposta.financeiro?.id,
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `proposta-${proposta.dimensionamento.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("PDF gerado com sucesso.");
+    } catch {
+      toast.error("Não foi possível gerar o PDF da proposta.");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -149,11 +182,27 @@ export default function PropostaDetalhes() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors"
+              type="button"
+              onClick={() =>
+                navigate(
+                  `/documentos?dimensionamento=${proposta.dimensionamento.id}${
+                    proposta.financeiro?.id ? `&financeiro=${proposta.financeiro.id}` : ""
+                  }`
+                )
+              }
+              className="flex items-center gap-2 bg-white text-orange-600 border border-orange-200 px-6 py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors"
+            >
+              <FileText className="w-5 h-5" />
+              Gerar Documentos
+            </button>
+            <button
+              type="button"
+              disabled={isExportingPdf}
+              onClick={handleExportPdf}
+              className="flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:bg-orange-300"
             >
               <Download className="w-5 h-5" />
-              Exportar PDF
+              {isExportingPdf ? "Gerando PDF..." : "Exportar PDF"}
             </button>
           </div>
         </div>
@@ -201,7 +250,7 @@ export default function PropostaDetalhes() {
                 <button
                   type="button"
                   disabled={isUpdatingStatus}
-                  onClick={() => handleStatusChange("rejected")}
+                  onClick={() => setShowRejectConfirm(true)}
                   className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition-colors ${
                     proposta.status === "rejected"
                       ? "bg-red-500 text-white"
@@ -332,6 +381,40 @@ export default function PropostaDetalhes() {
           </div>
         )}
       </div>
+
+      {showRejectConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Confirmar recusa da proposta
+            </h3>
+            <p className="text-sm text-gray-600 mt-2">
+              Deseja realmente alterar o status para <strong>Recusada</strong>?
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowRejectConfirm(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isUpdatingStatus}
+                onClick={async () => {
+                  await handleStatusChange("rejected");
+                  setShowRejectConfirm(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white font-medium hover:bg-red-600 disabled:bg-red-300"
+              >
+                Confirmar recusa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

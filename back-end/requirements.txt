@@ -12,9 +12,9 @@ whitenoise==6.9.0             # serve arquivos estáticos (front-end/dist) em pr
 gunicorn==23.0.0              # servidor WSGI para produção
 requests==2.31.0              # HTTP client para integração com APIs externas (ViaCEP)
 
-# --- Geração de PDF (etapa futura) ---
-# reportlab==4.2.5
-# weasyprint==62.3
+# --- Geração de PDF ---
+xhtml2pdf==0.2.17             # converte HTML → PDF (puro Python, usa reportlab)
+# weasyprint==62.3            # alternativa com mais recursos (requer libs do sistema)
 
 # --- Qualidade de código ---
 ruff==0.9.10                  # linting + formatação (substitui black, flake8, isort)

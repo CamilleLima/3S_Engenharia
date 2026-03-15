@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { Calculator, CircleDollarSign, TrendingUp } from "lucide-react";
+import { Calculator, CircleDollarSign, Download, FileText, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import {
@@ -40,6 +41,7 @@ function extractFirstErrorMessage(detail: unknown): string | null {
 }
 
 export default function Financeiro() {
+  const navigate = useNavigate();
   const [dimensionamentoId, setDimensionamentoId] = useState("");
   const [tarifaEnergia, setTarifaEnergia] = useState("0.95");
   const [custoDisponibilidade, setCustoDisponibilidade] = useState("50");
@@ -147,11 +149,37 @@ export default function Financeiro() {
 
       {resultado && (
         <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CircleDollarSign className="w-5 h-5 text-orange-500" />
-            <h3 className="text-lg font-semibold text-gray-800">
-              Resultado do Cálculo Financeiro
-            </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <CircleDollarSign className="w-5 h-5 text-orange-500" />
+              <h3 className="text-lg font-semibold text-gray-800">
+                Resultado do Cálculo Financeiro
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(`/proposta/${dimensionamentoId}`)
+                }
+                className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                Ver Proposta
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    `/documentos?dimensionamento=${dimensionamentoId}&financeiro=${resultado.id}`
+                  )
+                }
+                className="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Gerar Documentos
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

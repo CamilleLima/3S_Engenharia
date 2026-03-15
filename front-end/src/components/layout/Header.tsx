@@ -51,6 +51,18 @@ export default function Header() {
               >
                 Financeiro
               </NavLink>
+              <NavLink
+                to="/documentos"
+                className={({ isActive }) =>
+                  `px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-orange-100 text-orange-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`
+                }
+              >
+                Documentos
+              </NavLink>
             </nav>
           </div>
         </div>

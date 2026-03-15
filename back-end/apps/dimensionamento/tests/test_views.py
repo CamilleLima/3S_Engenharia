@@ -245,8 +245,7 @@ class TestDashboardAPI:
         assert len(response.data["budgets"]) == 2
 
         status_por_id = {
-            item["id"]: item["status"]
-            for item in response.data["budgets"]
+            item["id"]: item["status"] for item in response.data["budgets"]
         }
         assert status_por_id[str(dim_pending.pk)] == "pending"
         assert status_por_id[str(dim_accepted.pk)] == "accepted"
@@ -286,8 +285,7 @@ class TestDashboardAPI:
 
         assert response.status_code == status.HTTP_200_OK
         status_por_id = {
-            item["id"]: item["status"]
-            for item in response.data["budgets"]
+            item["id"]: item["status"] for item in response.data["budgets"]
         }
         assert status_por_id[str(dim_rejected.pk)] == "rejected"
 
