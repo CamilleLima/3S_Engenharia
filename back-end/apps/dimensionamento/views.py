@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Exists, OuterRef, Sum
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView
@@ -7,15 +8,19 @@ from rest_framework.views import APIView
 
 from apps.clientes.models import Cliente
 from apps.clientes.serializers import ClienteSerializer
+from apps.financeiro.models import CalculoFinanceiro
 
 from .models import Dimensionamento
 from .reference_data import obter_estacoes_solares_referencia
 from .serializers import (
+    DashboardResumoSerializer,
     DimensionamentoCalculoSerializer,
     DimensionamentoGeoCalculoSerializer,
     DimensionamentoGeoRespostaSerializer,
     DimensionamentoSerializer,
     OrcamentoEtapasRequestSerializer,
+    PropostaDetalheSerializer,
+    PropostaStatusUpdateSerializer,
 )
 from .services import DimensionamentoComGeolocalizacaoService
 
@@ -136,3 +141,151 @@ class OrcamentoEtapasCreateAPIView(APIView):
             },
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class DashboardAPIView(APIView):
+    """Retorna resumo e lista de orçamentos para a dashboard."""
+
+    @staticmethod
+    def _status_efetivo(dimensionamento: Dimensionamento, has_financeiro: bool) -> str:
+        if (
+            dimensionamento.status == Dimensionamento.STATUS_PENDING
+            and has_financeiro
+        ):
+            return Dimensionamento.STATUS_ACCEPTED
+        return dimensionamento.status
+
+    def get(self, request, *args, **kwargs):
+        financeiro_subquery = CalculoFinanceiro.objects.filter(
+            dimensionamento=OuterRef("pk")
+        )
+
+        queryset = (
+            Dimensionamento.objects.select_related("cliente")
+            .annotate(has_financeiro=Exists(financeiro_subquery))
+            .order_by("-created_at")[:100]
+        )
+
+        budgets = [
+            {
+                "id": str(item.pk),
+                "clientName": item.cliente.nome,
+                "city": f"{item.cliente.cidade}, {item.cliente.estado}",
+                "power": float(item.potencia_calculada_kwp),
+                "value": float(item.valor_total_sistema),
+                "date": item.created_at.strftime("%d/%m/%Y"),
+                "status": self._status_efetivo(item, item.has_financeiro),
+                "consumption": float(item.cliente.consumo_kwh_mes),
+            }
+            for item in queryset
+        ]
+
+        total_value = (
+            Dimensionamento.objects.aggregate(total=Sum("valor_total_sistema"))["total"]
+            or 0
+        )
+        accepted_count = sum(1 for item in budgets if item["status"] == "accepted")
+
+        data = {
+            "total_budgets": Dimensionamento.objects.count(),
+            "total_value": float(total_value),
+            "accepted_count": accepted_count,
+            "budgets": budgets,
+        }
+        serializer = DashboardResumoSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PropostaDetalheAPIView(APIView):
+    """Retorna os dados completos de uma proposta por dimensionamento."""
+
+    def get(self, request, pk, *args, **kwargs):
+        dimensionamento = (
+            Dimensionamento.objects.select_related("cliente")
+            .filter(pk=pk)
+            .first()
+        )
+        if not dimensionamento:
+            raise ValidationError({"detail": "Proposta não encontrada."})
+
+        financeiro = (
+            CalculoFinanceiro.objects.filter(dimensionamento=dimensionamento)
+            .order_by("-created_at")
+            .first()
+        )
+        has_financeiro = financeiro is not None
+        status_efetivo = (
+            Dimensionamento.STATUS_ACCEPTED
+            if dimensionamento.status == Dimensionamento.STATUS_PENDING
+            and has_financeiro
+            else dimensionamento.status
+        )
+
+        data = {
+            "cliente": {
+                "id": dimensionamento.cliente.pk,
+                "nome": dimensionamento.cliente.nome,
+                "cidade": dimensionamento.cliente.cidade,
+                "estado": dimensionamento.cliente.estado,
+                "telefone": dimensionamento.cliente.telefone or "",
+                "email": dimensionamento.cliente.email or "",
+                "consumo_kwh_mes": float(dimensionamento.cliente.consumo_kwh_mes),
+                "tipo_ligacao": dimensionamento.cliente.tipo_ligacao,
+                "tipo_telhado": dimensionamento.cliente.tipo_telhado,
+            },
+            "dimensionamento": {
+                "id": dimensionamento.pk,
+                "potencia_calculada_kwp": float(dimensionamento.potencia_calculada_kwp),
+                "valor_total_sistema": float(dimensionamento.valor_total_sistema),
+                "lucro_liquido_empresa": float(dimensionamento.lucro_liquido_empresa),
+                "irradiacao_media_cidade": float(
+                    dimensionamento.irradiacao_media_cidade
+                ),
+                "fator_perda_decimal": float(dimensionamento.fator_perda_decimal),
+                "financiamento_parcelas": dimensionamento.financiamento_parcelas,
+                "created_at": dimensionamento.created_at.strftime("%d/%m/%Y"),
+            },
+            "financeiro": (
+                {
+                    "id": financeiro.pk,
+                    "investimento_total_rs": float(financeiro.investimento_total_rs),
+                    "geracao_mensal_kwh": float(financeiro.geracao_mensal_kwh),
+                    "economia_mensal_rs": float(financeiro.economia_mensal_rs),
+                    "economia_anual_rs": float(financeiro.economia_anual_rs),
+                    "payback_meses": float(financeiro.payback_meses),
+                    "payback_anos": float(financeiro.payback_anos),
+                    "economia_25_anos_rs": float(financeiro.economia_25_anos_rs),
+                }
+                if financeiro
+                else None
+            ),
+            "status": status_efetivo,
+        }
+
+        serializer = PropostaDetalheSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PropostaStatusUpdateAPIView(APIView):
+    """Atualiza o status de uma proposta por id de dimensionamento."""
+
+    def patch(self, request, pk, *args, **kwargs):
+        dimensionamento = Dimensionamento.objects.filter(pk=pk).first()
+        if not dimensionamento:
+            raise ValidationError({"detail": "Proposta não encontrada."})
+
+        serializer = PropostaStatusUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        dimensionamento.status = serializer.validated_data["status"]
+        dimensionamento.save(update_fields=["status", "updated_at"])
+
+        return Response(
+            {
+                "id": dimensionamento.pk,
+                "status": dimensionamento.status,
+            },
+            status=status.HTTP_200_OK,
+        )

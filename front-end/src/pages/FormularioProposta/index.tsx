@@ -3,9 +3,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Calculator,
+  CircleDollarSign,
   Home,
   MapPin,
   Phone,
+  TrendingUp,
   User,
   Zap,
 } from "lucide-react";
@@ -21,6 +23,10 @@ import {
   criarOrcamentoEmEtapas,
   type OrcamentoEtapasResposta,
 } from "../../services/dimensionamentoService.ts";
+import {
+  calcularFinanceiro,
+  type FinanceiroResposta,
+} from "../../services/financeiroService.ts";
 import {
   brazilianStates,
   citiesByState,
@@ -66,6 +72,11 @@ interface DimensionamentoFormData {
   taxaJurosMensalDecimal: string;
 }
 
+interface FinanceiroFormData {
+  tarifaEnergiaKwh: string;
+  custoDisponibilidadeRs: string;
+}
+
 const initialClientForm: ClientFormData = {
   clientName: "",
   cpf: "",
@@ -97,6 +108,11 @@ const initialDimensionamentoForm: DimensionamentoFormData = {
   margemLucroDecimal: "",
   impostoServicoDecimal: "",
   taxaJurosMensalDecimal: "",
+};
+
+const initialFinanceiroForm: FinanceiroFormData = {
+  tarifaEnergiaKwh: "0.95",
+  custoDisponibilidadeRs: "50",
 };
 
 function digitsOnly(value: string) {
@@ -160,10 +176,15 @@ export default function FormularioProposta() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [ultimoOrcamento, setUltimoOrcamento] =
     useState<OrcamentoEtapasResposta | null>(null);
+  const [ultimoFinanceiro, setUltimoFinanceiro] =
+    useState<FinanceiroResposta | null>(null);
   const [formData, setFormData] = useState<ClientFormData>(initialClientForm);
   const [sellerData, setSellerData] = useState<SellerFormData>(initialSellerForm);
   const [dimensionamentoData, setDimensionamentoData] = useState<DimensionamentoFormData>(
     initialDimensionamentoForm
+  );
+  const [financeiroData, setFinanceiroData] = useState<FinanceiroFormData>(
+    initialFinanceiroForm
   );
   const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [sellerMode, setSellerMode] = useState<SellerMode>("existing");
@@ -243,10 +264,17 @@ export default function FormularioProposta() {
       Boolean(
         canProceedStep1 &&
           Number(formData.consumption) > 0 &&
+          Number(financeiroData.tarifaEnergiaKwh) > 0 &&
           dimensionamentoData.latitudeCliente &&
           dimensionamentoData.longitudeCliente
       ),
-    [canProceedStep1, dimensionamentoData.latitudeCliente, dimensionamentoData.longitudeCliente, formData.consumption]
+    [
+      canProceedStep1,
+      dimensionamentoData.latitudeCliente,
+      dimensionamentoData.longitudeCliente,
+      financeiroData.tarifaEnergiaKwh,
+      formData.consumption,
+    ]
   );
 
   const updateForm = <K extends keyof ClientFormData>(
@@ -268,6 +296,13 @@ export default function FormularioProposta() {
     value: DimensionamentoFormData[K]
   ) => {
     setDimensionamentoData((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateFinanceiro = <K extends keyof FinanceiroFormData>(
+    field: K,
+    value: FinanceiroFormData[K]
+  ) => {
+    setFinanceiroData((current) => ({ ...current, [field]: value }));
   };
 
   const handleStateChange = (selectedState: string) => {
@@ -347,6 +382,7 @@ export default function FormularioProposta() {
     setFormData(initialClientForm);
     setSellerData(initialSellerForm);
     setDimensionamentoData(initialDimensionamentoForm);
+    setFinanceiroData(initialFinanceiroForm);
     if (hasExistingSellers) {
       setSellerMode("existing");
       setSelectedSellerId(String(sellers[0].id));
@@ -388,6 +424,13 @@ export default function FormularioProposta() {
     ),
   });
 
+  const buildFinanceiroPayload = (dimensionamentoId: number) => ({
+    dimensionamento: dimensionamentoId,
+    tarifa_energia_kwh: Number(financeiroData.tarifaEnergiaKwh),
+    custo_disponibilidade_rs:
+      parseOptionalNumber(financeiroData.custoDisponibilidadeRs) ?? 50,
+  });
+
   const goToStep2 = () => {
     if (!canProceedStep1) {
       toast.error("Preencha os dados obrigatórios da etapa 1.");
@@ -427,13 +470,20 @@ export default function FormularioProposta() {
         cliente: buildPayload(sellerId),
         dimensionamento: buildDimensionamentoPayload(),
       });
+
+      const financeiro = await calcularFinanceiro(
+        buildFinanceiroPayload(response.dimensionamento.id)
+      );
+
       setUltimoOrcamento(response);
+      setUltimoFinanceiro(financeiro);
 
       const total = response?.dimensionamento?.valor_total_sistema;
+      const paybackAnos = Number(financeiro.payback_anos);
       toast.success(
         total
-          ? `Orçamento gerado com sucesso! Total: R$ ${Number(total).toFixed(2)}`
-          : "Orçamento gerado com sucesso!"
+          ? `Proposta gerada! Total: R$ ${Number(total).toFixed(2)} • Payback: ${paybackAnos.toFixed(2)} anos`
+          : "Proposta gerada com sucesso!"
       );
       resetForm();
     } catch (error: any) {
@@ -934,6 +984,52 @@ export default function FormularioProposta() {
                     placeholder="Ex: 0.009"
                   />
                 </div>
+
+                <div className="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-orange-500" />
+                    <h3 className="font-semibold text-gray-800">
+                      Parâmetros Financeiros (RF3)
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tarifa de Energia (R$/kWh) *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.0001"
+                        min="0.0001"
+                        value={financeiroData.tarifaEnergiaKwh}
+                        onChange={(e) =>
+                          updateFinanceiro("tarifaEnergiaKwh", e.target.value)
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        placeholder="Ex: 0.95"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Custo de Disponibilidade (R$)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={financeiroData.custoDisponibilidadeRs}
+                        onChange={(e) =>
+                          updateFinanceiro("custoDisponibilidadeRs", e.target.value)
+                        }
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        placeholder="Ex: 50"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1034,6 +1130,68 @@ export default function FormularioProposta() {
               </div>
             </div>
           </div>
+
+          {ultimoFinanceiro && (
+            <>
+              <div className="mt-6 flex items-center gap-2">
+                <CircleDollarSign className="w-5 h-5 text-orange-500" />
+                <h4 className="text-base font-semibold text-gray-800">
+                  Retorno Financeiro (RF3)
+                </h4>
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <p className="text-xs text-gray-500">Investimento total</p>
+                  <p className="text-lg font-semibold text-gray-800">
+                    {formatarMoeda(Number(ultimoFinanceiro.investimento_total_rs))}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <p className="text-xs text-gray-500">Economia mensal estimada</p>
+                  <p className="text-lg font-semibold text-green-700">
+                    {formatarMoeda(Number(ultimoFinanceiro.economia_mensal_rs))}
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg bg-gray-50 border border-gray-200">
+                  <p className="text-xs text-gray-500">Payback</p>
+                  <p className="text-lg font-semibold text-gray-800">
+                    {Number(ultimoFinanceiro.payback_anos).toFixed(2)} anos
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Economia anual: {" "}
+                    <strong>
+                      {formatarMoeda(Number(ultimoFinanceiro.economia_anual_rs))}
+                    </strong>
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Geração média mensal: {" "}
+                    <strong>
+                      {Number(ultimoFinanceiro.geracao_mensal_kwh).toFixed(2)} kWh
+                    </strong>
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Economia estimada em 25 anos: {" "}
+                    <strong>
+                      {formatarMoeda(Number(ultimoFinanceiro.economia_25_anos_rs))}
+                    </strong>
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Payback em meses: {" "}
+                    <strong>{Number(ultimoFinanceiro.payback_meses).toFixed(2)}</strong>
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

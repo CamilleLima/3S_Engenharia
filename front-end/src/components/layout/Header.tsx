@@ -16,7 +16,19 @@ export default function Header() {
 
             <nav className="hidden md:flex gap-1">
               <NavLink
-                to="/"
+                to="/dashboard"
+                className={({ isActive }) =>
+                  `px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-orange-100 text-orange-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`
+                }
+              >
+                Dashboard
+              </NavLink>
+              <NavLink
+                to="/novo-orcamento"
                 className={({ isActive }) =>
                   `px-4 py-2 rounded-lg transition-colors ${
                     isActive
@@ -26,6 +38,18 @@ export default function Header() {
                 }
               >
                 Novo Orçamento
+              </NavLink>
+              <NavLink
+                to="/financeiro"
+                className={({ isActive }) =>
+                  `px-4 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? "bg-orange-100 text-orange-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`
+                }
+              >
+                Financeiro
               </NavLink>
             </nav>
           </div>

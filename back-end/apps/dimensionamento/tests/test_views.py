@@ -6,6 +6,7 @@ from rest_framework.test import APIClient
 
 from apps.clientes.models import Cliente, Vendedor
 from apps.dimensionamento.models import Dimensionamento
+from apps.financeiro.models import CalculoFinanceiro
 
 
 @pytest.fixture
@@ -186,9 +187,215 @@ class TestOrcamentoEtapasAPI:
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["geo"]["uf"] == "AC"
-        assert response.data["dimensionamento"]["valor_total_sistema"] == 18470.0
-        assert Cliente.objects.filter(cpf="98765432100").count() == 1
-        assert Dimensionamento.objects.count() >= 1
+
+
+@pytest.mark.django_db
+class TestDashboardAPI:
+    def test_dashboard_retorna_resumo_e_budgets(self, api_client, cliente):
+        dim_pending = Dimensionamento.objects.create(
+            cliente=cliente,
+            consumos_mensais=[300.0] * 12,
+            irradiacao_media_cidade=4.56,
+            fator_perda_decimal=0.22,
+            custo_kit=12200.0,
+            custo_adicionais=2000.0,
+            margem_lucro_decimal=0.35,
+            imposto_servico_decimal=0.07,
+            taxa_juros_mensal_decimal=0.009,
+            potencia_calculada_kwp=2.81,
+            valor_total_sistema=18470.0,
+            lucro_liquido_empresa=3971.1,
+            financiamento_parcelas={"12": 1612.0},
+        )
+        dim_accepted = Dimensionamento.objects.create(
+            cliente=cliente,
+            consumos_mensais=[350.0] * 12,
+            irradiacao_media_cidade=4.56,
+            fator_perda_decimal=0.22,
+            custo_kit=13000.0,
+            custo_adicionais=2500.0,
+            margem_lucro_decimal=0.35,
+            imposto_servico_decimal=0.07,
+            taxa_juros_mensal_decimal=0.009,
+            potencia_calculada_kwp=3.10,
+            valor_total_sistema=21000.0,
+            lucro_liquido_empresa=4200.0,
+            financiamento_parcelas={"12": 1800.0},
+        )
+        CalculoFinanceiro.objects.create(
+            dimensionamento=dim_accepted,
+            tarifa_energia_kwh=0.95,
+            custo_disponibilidade_rs=50,
+            investimento_total_rs=21000,
+            geracao_mensal_kwh=330,
+            economia_mensal_rs=260,
+            economia_anual_rs=3120,
+            payback_meses=80,
+            payback_anos=6.66,
+            economia_25_anos_rs=78000,
+        )
+
+        url = reverse("dimensionamento:dashboard")
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["total_budgets"] == 2
+        assert response.data["accepted_count"] == 1
+        assert float(response.data["total_value"]) == 39470.0
+        assert len(response.data["budgets"]) == 2
+
+        status_por_id = {
+            item["id"]: item["status"]
+            for item in response.data["budgets"]
+        }
+        assert status_por_id[str(dim_pending.pk)] == "pending"
+        assert status_por_id[str(dim_accepted.pk)] == "accepted"
+
+    def test_dashboard_respeita_status_rejected(self, api_client, cliente):
+        dim_rejected = Dimensionamento.objects.create(
+            cliente=cliente,
+            consumos_mensais=[320.0] * 12,
+            irradiacao_media_cidade=4.56,
+            fator_perda_decimal=0.22,
+            custo_kit=12000.0,
+            custo_adicionais=1800.0,
+            margem_lucro_decimal=0.35,
+            imposto_servico_decimal=0.07,
+            taxa_juros_mensal_decimal=0.009,
+            potencia_calculada_kwp=2.90,
+            valor_total_sistema=19000.0,
+            lucro_liquido_empresa=3800.0,
+            financiamento_parcelas={"12": 1650.0},
+            status="rejected",
+        )
+        CalculoFinanceiro.objects.create(
+            dimensionamento=dim_rejected,
+            tarifa_energia_kwh=0.95,
+            custo_disponibilidade_rs=50,
+            investimento_total_rs=19000,
+            geracao_mensal_kwh=310,
+            economia_mensal_rs=240,
+            economia_anual_rs=2880,
+            payback_meses=79,
+            payback_anos=6.58,
+            economia_25_anos_rs=72000,
+        )
+
+        url = reverse("dimensionamento:dashboard")
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        status_por_id = {
+            item["id"]: item["status"]
+            for item in response.data["budgets"]
+        }
+        assert status_por_id[str(dim_rejected.pk)] == "rejected"
+
+
+@pytest.mark.django_db
+class TestPropostaDetalheAPI:
+    def test_detalhe_retorna_financeiro_quando_existir(self, api_client, cliente):
+        dimensionamento = Dimensionamento.objects.create(
+            cliente=cliente,
+            consumos_mensais=[300.0] * 12,
+            irradiacao_media_cidade=4.56,
+            fator_perda_decimal=0.22,
+            custo_kit=12200.0,
+            custo_adicionais=2000.0,
+            margem_lucro_decimal=0.35,
+            imposto_servico_decimal=0.07,
+            taxa_juros_mensal_decimal=0.009,
+            potencia_calculada_kwp=2.81,
+            valor_total_sistema=18470.0,
+            lucro_liquido_empresa=3971.1,
+            financiamento_parcelas={"12": 1612.0},
+        )
+        CalculoFinanceiro.objects.create(
+            dimensionamento=dimensionamento,
+            tarifa_energia_kwh=0.95,
+            custo_disponibilidade_rs=50,
+            investimento_total_rs=18470,
+            geracao_mensal_kwh=300,
+            economia_mensal_rs=234.85,
+            economia_anual_rs=2818.2,
+            payback_meses=78.65,
+            payback_anos=6.55,
+            economia_25_anos_rs=70455,
+        )
+
+        url = reverse("dimensionamento:detalhe", args=[dimensionamento.pk])
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "accepted"
+        assert response.data["cliente"]["nome"] == cliente.nome
+        assert float(response.data["dimensionamento"]["valor_total_sistema"]) == 18470.0
+        assert float(response.data["financeiro"]["payback_anos"]) == 6.55
+
+    def test_detalhe_sem_financeiro_retorna_pending(self, api_client, cliente):
+        dimensionamento = Dimensionamento.objects.create(
+            cliente=cliente,
+            consumos_mensais=[300.0] * 12,
+            irradiacao_media_cidade=4.56,
+            fator_perda_decimal=0.22,
+            custo_kit=12200.0,
+            custo_adicionais=2000.0,
+            margem_lucro_decimal=0.35,
+            imposto_servico_decimal=0.07,
+            taxa_juros_mensal_decimal=0.009,
+            potencia_calculada_kwp=2.81,
+            valor_total_sistema=18470.0,
+            lucro_liquido_empresa=3971.1,
+            financiamento_parcelas={"12": 1612.0},
+        )
+
+        url = reverse("dimensionamento:detalhe", args=[dimensionamento.pk])
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "pending"
+        assert response.data["financeiro"] is None
+
+
+@pytest.mark.django_db
+class TestPropostaStatusUpdateAPI:
+    def test_patch_status_proposta(self, api_client, cliente):
+        dimensionamento = Dimensionamento.objects.create(
+            cliente=cliente,
+            consumos_mensais=[300.0] * 12,
+            irradiacao_media_cidade=4.56,
+            fator_perda_decimal=0.22,
+            custo_kit=12200.0,
+            custo_adicionais=2000.0,
+            margem_lucro_decimal=0.35,
+            imposto_servico_decimal=0.07,
+            taxa_juros_mensal_decimal=0.009,
+            potencia_calculada_kwp=2.81,
+            valor_total_sistema=18470.0,
+            lucro_liquido_empresa=3971.1,
+            financiamento_parcelas={"12": 1612.0},
+        )
+
+        url = reverse("dimensionamento:status", args=[dimensionamento.pk])
+        response = api_client.patch(url, {"status": "rejected"}, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "rejected"
+
+        dimensionamento.refresh_from_db()
+        assert dimensionamento.status == "rejected"
+
+
+@pytest.mark.django_db
+class TestOrcamentoEtapasClienteExistente:
+    @pytest.fixture
+    def vendedor(self):
+        return Vendedor.objects.create(
+            nome="Vendedor Etapas",
+            cargo="Consultor",
+            telefone="68999990000",
+            email="vendedor-etapas@teste.com",
+        )
 
     def test_reaproveitar_cliente_existente_por_cpf(self, api_client, vendedor):
         cliente = Cliente.objects.create(

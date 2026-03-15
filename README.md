@@ -150,9 +150,9 @@ npm run dev
 
 | ID | Funcionalidade | Status |
 | ---- | --------------- | -------- |
-| RF1 | Formulário de entrada de dados (cliente + vendedor) | [] A implementar |
-| RF2 | Dimensionamento do sistema fotovoltaico | [] A implementar |
-| RF3 | Cálculo de Retorno de Investimento (Payback) | [] A implementar |
+| RF1 | Formulário de entrada de dados (cliente + vendedor) | [x] |
+| RF2 | Dimensionamento do sistema fotovoltaico | [x] |
+| RF3 | Cálculo de Retorno de Investimento (Payback) | [x] |
 | RF4 | Geração de relatório editável | [] A implementar |
 | RF5 | Geração de orçamento em PDF | [] A implementar |
 

@@ -7,6 +7,15 @@ from django.db import models
 class Dimensionamento(models.Model):
     """Armazena entradas e saídas do cálculo de dimensionamento/orçamento."""
 
+    STATUS_PENDING = "pending"
+    STATUS_ACCEPTED = "accepted"
+    STATUS_REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pendente"),
+        (STATUS_ACCEPTED, "Aceita"),
+        (STATUS_REJECTED, "Recusada"),
+    ]
+
     cliente = models.ForeignKey(
         "clientes.Cliente",
         on_delete=models.PROTECT,
@@ -79,6 +88,12 @@ class Dimensionamento(models.Model):
         verbose_name="Lucro Líquido da Empresa",
     )
     financiamento_parcelas = models.JSONField(verbose_name="Parcelas Financiamento")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        verbose_name="Status da Proposta",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
