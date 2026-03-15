@@ -1,74 +1,69 @@
-# TODO: implementar a lógica de negócio financeira aqui
-# As views devem APENAS chamar funções deste arquivo; não coloque regras de negócio nas views
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 
 
+class CalculoFinanceiroService:
+    """Serviço de cálculo de payback/ROI baseado no dimensionamento."""
 
-# TODO: definir a função principal de cálculo financeiro
-# Exemplo de estrutura:
-#
-def calcular_payback(dados: dict) -> dict:
-    """
-    Recebe os dados de entrada e retorna o resultado do cálculo financeiro.
-    Esta função implementa a lógica de cálculo de Retorno de Investimento (Payback).
- 
-    Args:
-        dados (dict): Dicionário com os parâmetros necessários. Ex:
-            {
-                "custo_equipamentos": 12000.0,
-                "custo_instalacao": 3000.0,
-                "geracao_mensal_kwh": 400.0,
-                "tarifa_energia_kwh": 0.95,
-                "custo_disponibilidade_rs": 50.0  # Opcional, padrão 50.0
-            }
- 
-    Returns:
-        dict: Dicionário com os resultados calculados (payback, economia, etc.)
-              ou um dicionário de erro.
- 
-    TODO: discutir fórmulas e parâmetros na reunião de equipe
-    """
-    # 1. Extrair dados e converter para Decimal para precisão financeira.
-    # A conversão via string (ex: Decimal(str(valor))) evita imprecisões do float.
-    custo_equipamentos = Decimal(str(dados.get("custo_equipamentos", "0.0")))
-    custo_instalacao = Decimal(str(dados.get("custo_instalacao", "0.0")))
-    geracao_mensal_kwh = Decimal(str(dados.get("geracao_mensal_kwh", "0.0")))
-    tarifa_energia_kwh = Decimal(str(dados.get("tarifa_energia_kwh", "0.0")))
-    custo_disponibilidade_rs = Decimal(str(dados.get("custo_disponibilidade_rs", "50.0")))
- 
-    # 2. Investimento Total
-    investimento_total = custo_equipamentos + custo_instalacao
- 
-    # 3. Economia Bruta Mensal (o que o cliente deixaria de pagar)
-    economia_bruta_mensal = geracao_mensal_kwh * tarifa_energia_kwh
- 
-    # 4. Economia Líquida Mensal (descontando a taxa mínima)
-    economia_liquida_mensal = economia_bruta_mensal - custo_disponibilidade_rs
- 
-    # 5. Prevenção de divisão por zero ou economia negativa
-    if economia_liquida_mensal <= Decimal("0"):
+    def __init__(
+        self,
+        dimensionamento,
+        tarifa_energia_kwh,
+        custo_disponibilidade_rs=Decimal("50.00"),
+    ):
+        self.dimensionamento = dimensionamento
+        self.tarifa_energia_kwh = self._to_decimal(tarifa_energia_kwh)
+        self.custo_disponibilidade_rs = self._to_decimal(custo_disponibilidade_rs)
+
+        self._validar_entrada()
+
+    @staticmethod
+    def _to_decimal(valor):
+        return Decimal(str(valor))
+
+    @staticmethod
+    def _round_money(valor):
+        return valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def _validar_entrada(self):
+        if self.tarifa_energia_kwh <= 0:
+            raise ValueError("tarifa_energia_kwh deve ser maior que zero.")
+
+        if self.custo_disponibilidade_rs < 0:
+            raise ValueError("custo_disponibilidade_rs não pode ser negativo.")
+
+    def calcular(self):
+        investimento_total = self._to_decimal(self.dimensionamento.valor_total_sistema)
+        potencia_kwp = self._to_decimal(self.dimensionamento.potencia_calculada_kwp)
+        irradiacao = self._to_decimal(self.dimensionamento.irradiacao_media_cidade)
+        fator_perda = self._to_decimal(self.dimensionamento.fator_perda_decimal)
+
+        performance_ratio = Decimal("1") - fator_perda
+        if performance_ratio <= 0:
+            raise ValueError("fator_perda_decimal inválido para cálculo financeiro.")
+
+        geracao_mensal_kwh = (
+            potencia_kwp * irradiacao * Decimal("30") * performance_ratio
+        )
+        economia_bruta_mensal = geracao_mensal_kwh * self.tarifa_energia_kwh
+        economia_liquida_mensal = economia_bruta_mensal - self.custo_disponibilidade_rs
+
+        if economia_liquida_mensal <= 0:
+            raise ValueError(
+                "O sistema dimensionado não gera economia suficiente para cobrir "
+                "o custo de disponibilidade."
+            )
+
+        payback_meses = investimento_total / economia_liquida_mensal
+        payback_anos = payback_meses / Decimal("12")
+        economia_anual = economia_liquida_mensal * Decimal("12")
+        economia_25_anos = economia_anual * Decimal("25")
+
         return {
-            "erro": "O sistema dimensionado não gera economia suficiente para cobrir a taxa mínima."
+            "investimento_total_rs": float(self._round_money(investimento_total)),
+            "geracao_mensal_kwh": float(self._round_money(geracao_mensal_kwh)),
+            "economia_mensal_rs": float(self._round_money(economia_liquida_mensal)),
+            "economia_anual_rs": float(self._round_money(economia_anual)),
+            "payback_meses": float(self._round_money(payback_meses)),
+            "payback_anos": float(self._round_money(payback_anos)),
+            "economia_25_anos_rs": float(self._round_money(economia_25_anos)),
         }
- 
-    # 6. Cálculo do Payback (em meses e convertido para anos)
-    payback_meses = investimento_total / economia_liquida_mensal
-    payback_anos = payback_meses / Decimal("12")
- 
-    # 7. Economia Acumulada (Exemplo para 25 anos de vida útil do painel)
-    vida_util_anos = Decimal("25")
-    economia_acumulada_25_anos = (economia_liquida_mensal * Decimal("12")) * vida_util_anos
- 
-    # 8. Arredondar resultados para o número correto de casas decimais
-    # Retornamos como float para ser facilmente serializável em JSON pela API.
-    TWO_PLACES = Decimal("0.01")
-    ONE_PLACE = Decimal("0.1")
- 
-    return {
-        "investimento_total_rs": float(investimento_total.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)),
-        "economia_mensal_rs": float(economia_liquida_mensal.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)),
-        "economia_anual_rs": float((economia_liquida_mensal * 12).quantize(TWO_PLACES, rounding=ROUND_HALF_UP)),
-        "payback_meses": float(payback_meses.quantize(ONE_PLACE, rounding=ROUND_HALF_UP)),
-        "payback_anos": float(payback_anos.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)),
-        "economia_25_anos_rs": float(economia_acumulada_25_anos.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)),
-    }

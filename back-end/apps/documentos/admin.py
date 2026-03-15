@@ -1,5 +1,3 @@
-from django.contrib import admin
-
 # TODO: importar e registrar modelos após defini-los em models.py
 # from .models import ...
 

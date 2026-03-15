@@ -1,20 +1,22 @@
-from rest_framework import viewsets
+from rest_framework import status
+from rest_framework.generics import CreateAPIView
+from rest_framework.response import Response
 
-# TODO: importar modelos, serializers e services após defini-los
-# from .models import ...
-# from .serializers import ...
-# from .services import ...
+from .serializers import (
+    CalculoFinanceiroCalcularSerializer,
+    CalculoFinanceiroSerializer,
+)
 
 
-# TODO: criar ViewSets para cada recurso do app
-# Padrão recomendado: ModelViewSet para CRUD completo
-# Lógica financeira deve ser delegada ao services.py
-#
-# class ExampleViewSet(viewsets.ModelViewSet):
-#     queryset = ExampleModel.objects.all()
-#     serializer_class = ExampleSerializer
-#
-#     def perform_create(self, serializer):
-#         # TODO: chamar service de cálculo financeiro antes de salvar
-#         pass
+class CalculoFinanceiroAPIView(CreateAPIView):
+    """Executa cálculo financeiro (RF3) e persiste resultado."""
 
+    serializer_class = CalculoFinanceiroCalcularSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        output = CalculoFinanceiroSerializer(instance)
+        return Response(output.data, status=status.HTTP_201_CREATED)

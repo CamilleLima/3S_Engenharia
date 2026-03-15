@@ -1,5 +1,3 @@
-from rest_framework import serializers
-
 # TODO: importar os modelos deste app após defini-los
 # from .models import ...
 

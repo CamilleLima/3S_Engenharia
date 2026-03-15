@@ -109,7 +109,11 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    @action(detail=False, methods=["get"], url_path="por-vendedor/(?P<vendedor_id>[^/.]+)")
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="por-vendedor/(?P<vendedor_id>[^/.]+)",
+    )
     def por_vendedor(self, request, vendedor_id=None):
         """Endpoint customizado para listar clientes de um vendedor específico."""
         clientes = self.queryset.filter(vendedor_id=vendedor_id)

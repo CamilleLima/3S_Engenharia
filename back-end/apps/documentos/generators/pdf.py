@@ -5,14 +5,15 @@ from weasyprint import HTML
 
 # TODO: implementar a lógica de geração de PDF aqui
 
+
 def gerar_proposta_pdf(dados_proposta: dict) -> str:
     """
     Recebe os dados consolidados da proposta, renderiza um template HTML
     e o converte para um arquivo PDF usando WeasyPrint.
 
     Args:
-        dados_proposta (dict): Dicionário completo retornado por `gerar_dados_relatorio`,
-                               incluindo os campos editáveis.
+        dados_proposta (dict): Dicionário completo retornado por
+            `gerar_dados_relatorio`, incluindo os campos editáveis.
 
     Returns:
         str: O caminho para o arquivo PDF temporário gerado.
@@ -25,7 +26,7 @@ def gerar_proposta_pdf(dados_proposta: dict) -> str:
     # Usamos delete=False para que o arquivo não seja apagado ao ser fechado.
     pdf_file = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
 
-    # 3. Gera o PDF a partir do HTML renderizado e o salva no caminho do arquivo temporário
+    # 3. Gera o PDF a partir do HTML renderizado e salva no arquivo temporário
     # WeasyPrint consegue resolver caminhos de arquivos locais passados no HTML.
     HTML(string=html_string).write_pdf(pdf_file.name)
 

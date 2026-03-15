@@ -4,7 +4,6 @@ Testes para os serializers do app clientes.
 
 import pytest
 import responses
-from rest_framework.exceptions import ValidationError
 
 from apps.clientes.models import Vendedor
 from apps.clientes.serializers import (

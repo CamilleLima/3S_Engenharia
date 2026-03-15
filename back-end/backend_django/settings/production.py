@@ -1,1 +1,49 @@
-"""\nDjango Settings — Produção\nHerda de base.py e configura para ambiente de produção.\nTodas as variáveis sensíveis devem vir de variáveis de ambiente (.env).\n\nUso:\n    DJANGO_SETTINGS_MODULE=backend_django.settings.production\n"""\nimport os\n\nfrom .base import *  # noqa: F401, F403\n\nDEBUG = False\n\nALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")\n\n# ---------------------------------------------------------------------------\n# Banco de dados — PostgreSQL\n# ---------------------------------------------------------------------------\nDATABASES = {\n    "default": {\n        "ENGINE": "django.db.backends.postgresql",\n        "NAME": os.environ.get("DB_NAME"),\n        "USER": os.environ.get("DB_USER"),\n        "PASSWORD": os.environ.get("DB_PASSWORD"),\n        "HOST": os.environ.get("DB_HOST", "localhost"),\n        "PORT": os.environ.get("DB_PORT", "5432"),\n    }\n}\n\n# ---------------------------------------------------------------------------\n# CORS — apenas domínios autorizados em produção\n# ---------------------------------------------------------------------------\nCORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")\n\n# ---------------------------------------------------------------------------\n# Segurança HTTP\n# ---------------------------------------------------------------------------\nSECURE_SSL_REDIRECT = True\nSESSION_COOKIE_SECURE = True\nCSRF_COOKIE_SECURE = True\nSECURE_HSTS_SECONDS = 31536000\nSECURE_HSTS_INCLUDE_SUBDOMAINS = True\nSECURE_HSTS_PRELOAD = True\n
+"""
+Django Settings — Produção
+Herda de base.py e configura para ambiente de produção.
+Todas as variáveis sensíveis devem vir de variáveis de ambiente (.env).
+
+Uso:
+    DJANGO_SETTINGS_MODULE=backend_django.settings.production
+"""
+
+import os
+
+from .base import *  # noqa: F401, F403
+
+DEBUG = False
+
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")
+
+# ---------------------------------------------------------------------------
+# Banco de dados — PostgreSQL
+# ---------------------------------------------------------------------------
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
+    }
+}
+
+# ---------------------------------------------------------------------------
+# CORS — apenas domínios autorizados em produção
+# ---------------------------------------------------------------------------
+CORS_ALLOWED_ORIGINS = [
+    origin
+    for origin in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+    if origin
+]
+
+# ---------------------------------------------------------------------------
+# Segurança HTTP
+# ---------------------------------------------------------------------------
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True

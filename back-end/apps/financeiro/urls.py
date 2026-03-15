@@ -1,16 +1,9 @@
-from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-# TODO: importar ViewSets após defini-los em views.py
-# from .views import ...
+from .views import CalculoFinanceiroAPIView
 
-router = DefaultRouter()
-
-# TODO: registrar rotas no router após criar os ViewSets
-# Exemplo:
-# router.register(r"example", ExampleViewSet, basename="example")
+app_name = "financeiro"
 
 urlpatterns = [
-    path("", include(router.urls)),
+    path("calcular/", CalculoFinanceiroAPIView.as_view(), name="calcular"),
 ]
-
