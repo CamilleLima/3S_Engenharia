@@ -29,16 +29,23 @@ class TestDocumentos:
         assert dados["economia_mensal_rs"] == 234.85
         assert dados["texto_adicional"] == "Observação teste"
 
-    def test_gerar_pdf_com_xhtml2pdf(self, monkeypatch):
-        """Garante que gerar_proposta_pdf usa xhtml2pdf por padrão."""
+    def test_gerar_pdf_com_gerador_padrao(self, monkeypatch):
+        """Garante que gerar_proposta_pdf usa o gerador padrão quando disponível."""
         import os
 
+        from apps.documentos.generators import pdf as pdf_module
         from apps.documentos.generators.pdf import gerar_proposta_pdf
+
+        def _fake_xhtml2pdf(html_string, pdf_path):
+            assert "Proposta Teste" in html_string
+            with open(pdf_path, "wb") as generated_file:
+                generated_file.write(b"%PDF-1.4 fake-xhtml2pdf")
 
         monkeypatch.setattr(
             "apps.documentos.generators.pdf.render_to_string",
             lambda _template, _ctx: "<html><body><p>Proposta Teste</p></body></html>",
         )
+        monkeypatch.setattr(pdf_module, "_gerar_com_xhtml2pdf", _fake_xhtml2pdf)
 
         pdf_path = gerar_proposta_pdf({"nome_cliente": "Cliente X"})
 

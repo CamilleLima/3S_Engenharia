@@ -28,16 +28,16 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.11'
         cache: 'pip'
-        cache-dependency-path: back-end/requirements.txt
+        cache-dependency-path: back-end/requirements-ci.txt
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
 
         for attempt in 1 2 3; do
-          python -m pip install --prefer-binary -r requirements.txt && break
+          python -m pip install --prefer-binary -r requirements-ci.txt && break
           echo "Tentativa $attempt de instalar dependências falhou."
           if [ "$attempt" -eq 3 ]; then
             exit 1
