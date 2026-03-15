@@ -252,10 +252,7 @@ class TestClienteModel:
             vendedor=vendedor,
         )
 
-        assert (
-            cliente.endereco_completo
-            == "Av. Brasil, 500 - Centro, Rio Branco/AC"
-        )
+        assert cliente.endereco_completo == "Av. Brasil, 500 - Centro, Rio Branco/AC"
 
     def test_relacionamento_vendedor_protegido(self, vendedor):
         """Testa que não é possível deletar vendedor com clientes associados."""

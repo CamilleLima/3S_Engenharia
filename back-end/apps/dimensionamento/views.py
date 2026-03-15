@@ -102,9 +102,7 @@ class OrcamentoEtapasCreateAPIView(APIView):
                 custo_adicionais=dados_dim.get("custo_adicionais"),
                 margem_lucro_decimal=dados_dim.get("margem_lucro_decimal"),
                 imposto_servico_decimal=dados_dim.get("imposto_servico_decimal"),
-                taxa_juros_mensal_decimal=dados_dim.get(
-                    "taxa_juros_mensal_decimal"
-                ),
+                taxa_juros_mensal_decimal=dados_dim.get("taxa_juros_mensal_decimal"),
             )
         except ValueError as exc:
             raise ValidationError({"dimensionamento": {"detail": str(exc)}}) from exc

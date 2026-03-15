@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Proposta Comercial - 3S Engenharia</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #222;
+            margin: 24px;
+        }
+        h1, h2 {
+            color: #0f766e;
+            margin-bottom: 8px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 16px;
+        }
+        .label {
+            font-weight: bold;
+        }
+        .muted {
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Proposta Comercial</h1>
+    <p class="muted">3S Engenharia</p>
+
+    <div class="section">
+        <h2>Dados do Cliente</h2>
+        <div class="grid">
+            <div><span class="label">Nome:</span> {{ nome_cliente }}</div>
+            <div><span class="label">CPF:</span> {{ cpf }}</div>
+            <div><span class="label">Cidade/UF:</span> {{ cidade_uf }}</div>
+            <div><span class="label">Telefone:</span> {{ telefone|default:"-" }}</div>
+            <div><span class="label">E-mail:</span> {{ email|default:"-" }}</div>
+            <div><span class="label">Endereço:</span> {{ endereco_completo }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Dimensionamento Técnico</h2>
+        <div class="grid">
+            <div><span class="label">Potência do sistema (kWp):</span> {{ potencia_sistema_kwp }}</div>
+            <div><span class="label">Quantidade de painéis:</span> {{ quantidade_paineis|default:"A definir" }}</div>
+            <div><span class="label">Marca de painel:</span> {{ marca_painel }}</div>
+            <div><span class="label">Valor total sistema (R$):</span> {{ valor_total_sistema }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Retorno Financeiro</h2>
+        <div class="grid">
+            <div><span class="label">Investimento total (R$):</span> {{ investimento_total_rs }}</div>
+            <div><span class="label">Economia mensal (R$):</span> {{ economia_mensal_rs }}</div>
+            <div><span class="label">Economia anual (R$):</span> {{ economia_anual_rs }}</div>
+            <div><span class="label">Payback (anos):</span> {{ payback_anos }}</div>
+            <div><span class="label">Economia em 25 anos (R$):</span> {{ economia_25_anos_rs }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Responsável Comercial</h2>
+        <div class="grid">
+            <div><span class="label">Vendedor:</span> {{ vendedor_nome }}</div>
+            <div><span class="label">Cargo:</span> {{ vendedor_cargo }}</div>
+        </div>
+    </div>
+
+    {% if texto_adicional %}
+    <div class="section">
+        <h2>Observações</h2>
+        <p>{{ texto_adicional }}</p>
+    </div>
+    {% endif %}
+
+    {% if imagem_extra_path %}
+    <div class="section">
+        <h2>Anexo</h2>
+        <img src="{{ imagem_extra_path }}" alt="Imagem adicional" style="max-width: 100%;">
+    </div>
+    {% endif %}
+</body>
+</html>

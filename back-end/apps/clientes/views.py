@@ -44,9 +44,9 @@ class VendedorViewSet(viewsets.ModelViewSet):
         # Busca por nome ou email
         search = self.request.query_params.get("search", None)
         if search:
-            queryset = queryset.filter(
-                nome__icontains=search
-            ) | queryset.filter(email__icontains=search)
+            queryset = queryset.filter(nome__icontains=search) | queryset.filter(
+                email__icontains=search
+            )
 
         return queryset
 
@@ -103,9 +103,9 @@ class ClienteViewSet(viewsets.ModelViewSet):
         # Busca por nome ou CPF
         search = self.request.query_params.get("search", None)
         if search:
-            queryset = queryset.filter(
-                nome__icontains=search
-            ) | queryset.filter(cpf__icontains=search)
+            queryset = queryset.filter(nome__icontains=search) | queryset.filter(
+                cpf__icontains=search
+            )
 
         return queryset
 

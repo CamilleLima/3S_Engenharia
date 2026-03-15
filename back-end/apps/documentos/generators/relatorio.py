@@ -38,7 +38,6 @@ def gerar_dados_relatorio(
         "economia_mensal_rs": resultado_financeiro.get("economia_mensal_rs"),
         "payback_anos": resultado_financeiro.get("payback_anos"),
         "investimento_total_rs": resultado_financeiro.get("investimento_total_rs"),
-
         # Adiciona os campos editáveis ao contexto
         "texto_adicional": texto_adicional,
         "imagem_extra_path": imagem_extra_path,

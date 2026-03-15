@@ -28,9 +28,7 @@ class VendedorSerializer(serializers.ModelSerializer):
     def validate_telefone(self, value):
         """Valida que o telefone contém apenas números."""
         if not value.isdigit():
-            raise serializers.ValidationError(
-                "Telefone deve conter apenas números."
-            )
+            raise serializers.ValidationError("Telefone deve conter apenas números.")
         return value
 
 
@@ -76,9 +74,7 @@ class ClienteSerializer(serializers.ModelSerializer):
     def validate_cpf(self, value):
         """Valida que o CPF contém apenas números."""
         if not value.isdigit():
-            raise serializers.ValidationError(
-                "CPF deve conter apenas números."
-            )
+            raise serializers.ValidationError("CPF deve conter apenas números.")
         if len(value) != 11:
             raise serializers.ValidationError("CPF deve conter 11 dígitos.")
         return value
@@ -86,17 +82,13 @@ class ClienteSerializer(serializers.ModelSerializer):
     def validate_telefone(self, value):
         """Valida que o telefone contém apenas números (se fornecido)."""
         if value and not value.isdigit():
-            raise serializers.ValidationError(
-                "Telefone deve conter apenas números."
-            )
+            raise serializers.ValidationError("Telefone deve conter apenas números.")
         return value
 
     def validate_cep(self, value):
         """Valida que o CEP contém apenas números."""
         if not value.isdigit():
-            raise serializers.ValidationError(
-                "CEP deve conter apenas números."
-            )
+            raise serializers.ValidationError("CEP deve conter apenas números.")
         if len(value) != 8:
             raise serializers.ValidationError("CEP deve conter 8 dígitos.")
         return value
@@ -107,8 +99,7 @@ class ClienteSerializer(serializers.ModelSerializer):
         """
         campos_endereco = ["rua", "bairro", "cidade", "estado"]
         endereco_incompleto = any(
-            not str(validated_data.get(campo, "")).strip()
-            for campo in campos_endereco
+            not str(validated_data.get(campo, "")).strip() for campo in campos_endereco
         )
 
         if endereco_incompleto:
@@ -157,4 +148,3 @@ class ClienteCreateSerializer(ClienteSerializer):
 
     class Meta(ClienteSerializer.Meta):
         fields = ClienteSerializer.Meta.fields + ["vendedor_detalhes"]
-

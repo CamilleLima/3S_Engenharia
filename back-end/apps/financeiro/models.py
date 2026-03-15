@@ -76,4 +76,4 @@ class CalculoFinanceiro(models.Model):
         db_table = "calculos_financeiros"
 
     def __str__(self):
-        return f"Financeiro #{self.pk} - Dimensionamento #{self.dimensionamento_id}"
+        return f"Financeiro #{self.pk} - Dimensionamento #{self.dimensionamento.pk}"

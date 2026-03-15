@@ -37,12 +37,8 @@ class Vendedor(models.Model):
         verbose_name="Ativo",
         help_text="Indica se o vendedor está ativo no sistema",
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True, verbose_name="Criado em"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, verbose_name="Atualizado em"
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
 
     class Meta:
         verbose_name = "Vendedor"
@@ -174,12 +170,8 @@ class Cliente(models.Model):
     )
 
     # Auditoria
-    created_at = models.DateTimeField(
-        auto_now_add=True, verbose_name="Criado em"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, verbose_name="Atualizado em"
-    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Criado em")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Atualizado em")
 
     class Meta:
         verbose_name = "Cliente"
@@ -194,4 +186,3 @@ class Cliente(models.Model):
     def endereco_completo(self):
         """Retorna o endereço completo formatado."""
         return f"{self.rua}, {self.numero} - {self.bairro}, {self.cidade}/{self.estado}"
-

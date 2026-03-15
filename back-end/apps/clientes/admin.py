@@ -80,4 +80,3 @@ class ClienteAdmin(admin.ModelAdmin):
             },
         ),
     ]
-
