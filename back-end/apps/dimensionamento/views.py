@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from apps.clientes.models import Cliente
 from apps.clientes.serializers import ClienteSerializer
 from apps.financeiro.models import CalculoFinanceiro
+from apps.financeiro.services import CalculoFinanceiroService
 
 from .models import Dimensionamento
 from .reference_data import obter_estacoes_solares_referencia
@@ -20,6 +21,7 @@ from .serializers import (
     DimensionamentoSerializer,
     OrcamentoEtapasRequestSerializer,
     PropostaDetalheSerializer,
+    PropostaRecalculoSerializer,
     PropostaStatusUpdateSerializer,
 )
 from .services import DimensionamentoComGeolocalizacaoService
@@ -127,6 +129,8 @@ class OrcamentoEtapasCreateAPIView(APIView):
             valor_total_sistema=resultado["valor_total_sistema"],
             lucro_liquido_empresa=resultado["lucro_liquido_empresa"],
             financiamento_parcelas=resultado["financiamento_parcelas"],
+            latitude_cliente=dados_dim["latitude_cliente"],
+            longitude_cliente=dados_dim["longitude_cliente"],
         )
 
         response_data = {
@@ -199,7 +203,9 @@ class PropostaDetalheAPIView(APIView):
 
     def get(self, request, pk, *args, **kwargs):
         dimensionamento = (
-            Dimensionamento.objects.select_related("cliente").filter(pk=pk).first()
+            Dimensionamento.objects.select_related("cliente", "cliente__vendedor")
+            .filter(pk=pk)
+            .first()
         )
         if not dimensionamento:
             raise ValidationError({"detail": "Proposta não encontrada."})
@@ -221,16 +227,34 @@ class PropostaDetalheAPIView(APIView):
             "cliente": {
                 "id": dimensionamento.cliente.pk,
                 "nome": dimensionamento.cliente.nome,
+                "cpf": dimensionamento.cliente.cpf,
                 "cidade": dimensionamento.cliente.cidade,
                 "estado": dimensionamento.cliente.estado,
+                "cep": dimensionamento.cliente.cep,
+                "rua": dimensionamento.cliente.rua,
+                "bairro": dimensionamento.cliente.bairro,
+                "numero": dimensionamento.cliente.numero,
                 "telefone": dimensionamento.cliente.telefone or "",
                 "email": dimensionamento.cliente.email or "",
                 "consumo_kwh_mes": float(dimensionamento.cliente.consumo_kwh_mes),
                 "tipo_ligacao": dimensionamento.cliente.tipo_ligacao,
                 "tipo_telhado": dimensionamento.cliente.tipo_telhado,
+                "vendedor_id": dimensionamento.cliente.vendedor_id,
+                "vendedor_nome": dimensionamento.cliente.vendedor.nome,
+                "vendedor_cargo": dimensionamento.cliente.vendedor.cargo,
             },
             "dimensionamento": {
                 "id": dimensionamento.pk,
+                "latitude_cliente": (
+                    float(dimensionamento.latitude_cliente)
+                    if dimensionamento.latitude_cliente is not None
+                    else None
+                ),
+                "longitude_cliente": (
+                    float(dimensionamento.longitude_cliente)
+                    if dimensionamento.longitude_cliente is not None
+                    else None
+                ),
                 "potencia_calculada_kwp": float(dimensionamento.potencia_calculada_kwp),
                 "valor_total_sistema": float(dimensionamento.valor_total_sistema),
                 "lucro_liquido_empresa": float(dimensionamento.lucro_liquido_empresa),
@@ -284,3 +308,78 @@ class PropostaStatusUpdateAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class PropostaRecalcularAPIView(APIView):
+    """Recalcula uma proposta após atualização técnica (ex: nova coordenada)."""
+
+    def patch(self, request, pk, *args, **kwargs):
+        dimensionamento = (
+            Dimensionamento.objects.select_related("cliente").filter(pk=pk).first()
+        )
+        if not dimensionamento:
+            raise ValidationError({"detail": "Proposta não encontrada."})
+
+        serializer = PropostaRecalculoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        latitude = serializer.validated_data["latitude_cliente"]
+        longitude = serializer.validated_data["longitude_cliente"]
+
+        service = DimensionamentoComGeolocalizacaoService()
+        try:
+            resultado = service.calcular_orcamento(
+                consumo_kwh_mes=float(dimensionamento.cliente.consumo_kwh_mes),
+                uf=dimensionamento.cliente.estado,
+                latitude_cliente=latitude,
+                longitude_cliente=longitude,
+                estacoes_solares=obter_estacoes_solares_referencia(),
+                custo_kit=float(dimensionamento.custo_kit),
+                custo_adicionais=float(dimensionamento.custo_adicionais),
+                margem_lucro_decimal=float(dimensionamento.margem_lucro_decimal),
+                imposto_servico_decimal=float(dimensionamento.imposto_servico_decimal),
+                taxa_juros_mensal_decimal=float(
+                    dimensionamento.taxa_juros_mensal_decimal
+                ),
+            )
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
+
+        dimensionamento.consumos_mensais = [float(dimensionamento.cliente.consumo_kwh_mes)] * 12
+        dimensionamento.latitude_cliente = latitude
+        dimensionamento.longitude_cliente = longitude
+        dimensionamento.irradiacao_media_cidade = resultado["irradiacao_media_cidade"]
+        dimensionamento.fator_perda_decimal = resultado["fator_perda_decimal"]
+        dimensionamento.potencia_calculada_kwp = resultado["potencia_calculada_kwp"]
+        dimensionamento.valor_total_sistema = resultado["valor_total_sistema"]
+        dimensionamento.lucro_liquido_empresa = resultado["lucro_liquido_empresa"]
+        dimensionamento.financiamento_parcelas = resultado["financiamento_parcelas"]
+        dimensionamento.save(
+            update_fields=[
+                "consumos_mensais",
+                "latitude_cliente",
+                "longitude_cliente",
+                "irradiacao_media_cidade",
+                "fator_perda_decimal",
+                "potencia_calculada_kwp",
+                "valor_total_sistema",
+                "lucro_liquido_empresa",
+                "financiamento_parcelas",
+                "updated_at",
+            ]
+        )
+
+        calculos = CalculoFinanceiro.objects.filter(dimensionamento=dimensionamento)
+        for calculo in calculos:
+            financeiro_service = CalculoFinanceiroService(
+                dimensionamento=dimensionamento,
+                tarifa_energia_kwh=calculo.tarifa_energia_kwh,
+                custo_disponibilidade_rs=calculo.custo_disponibilidade_rs,
+            )
+            resultado_financeiro = financeiro_service.calcular()
+            for campo, valor in resultado_financeiro.items():
+                setattr(calculo, campo, valor)
+            calculo.save()
+
+        output = DimensionamentoSerializer(dimensionamento)
+        return Response(output.data, status=status.HTTP_200_OK)

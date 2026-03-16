@@ -68,3 +68,11 @@ export async function criarCliente(dados: CriarClientePayload) {
   const response = await api.post("/clientes/", dados);
   return response.data;
 }
+
+export async function atualizarCliente(
+  clienteId: number,
+  dados: Partial<CriarClientePayload>
+) {
+  const response = await api.patch(`/clientes/${clienteId}/`, dados);
+  return response.data;
+}

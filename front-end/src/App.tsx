@@ -3,9 +3,8 @@ import { Toaster } from "sonner";
 
 import MainLayout from "./components/layout/MainLayout.tsx";
 import Dashboard from "./pages/Dashboard/index.tsx";
+import EditarProposta from "./pages/EditarProposta/index.tsx";
 import Configuracoes from "./pages/Configuracoes/index.tsx";
-import Documentos from "./pages/Documentos/index.tsx";
-import Financeiro from "./pages/Financeiro/index.tsx";
 import FormularioProposta from "./pages/FormularioProposta/index.tsx";
 import PropostaDetalhes from "./pages/PropostaDetalhes/index.tsx";
 
@@ -20,10 +19,11 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="novo-orcamento" element={<FormularioProposta />} />
-            <Route path="financeiro" element={<Financeiro />} />
-            <Route path="documentos" element={<Documentos />} />
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="proposta/:id" element={<PropostaDetalhes />} />
+            <Route path="proposta/:id/editar" element={<EditarProposta />} />
+            <Route path="financeiro" element={<Navigate to="/dashboard" replace />} />
+            <Route path="documentos" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

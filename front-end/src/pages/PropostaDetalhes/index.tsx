@@ -5,7 +5,7 @@ import {
   Calendar,
   DollarSign,
   Download,
-  FileText,
+  Edit,
   XCircle,
   Sun,
   TrendingUp,
@@ -136,6 +136,7 @@ export default function PropostaDetalhes() {
     }
   };
 
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -183,17 +184,11 @@ export default function PropostaDetalhes() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() =>
-                navigate(
-                  `/documentos?dimensionamento=${proposta.dimensionamento.id}${
-                    proposta.financeiro?.id ? `&financeiro=${proposta.financeiro.id}` : ""
-                  }`
-                )
-              }
-              className="flex items-center gap-2 bg-white text-orange-600 border border-orange-200 px-6 py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors"
+              onClick={() => navigate(`/proposta/${proposta.dimensionamento.id}/editar`)}
+              className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
             >
-              <FileText className="w-5 h-5" />
-              Gerar Documentos
+              <Edit className="w-5 h-5" />
+              Editar Proposta
             </button>
             <button
               type="button"
@@ -415,6 +410,7 @@ export default function PropostaDetalhes() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

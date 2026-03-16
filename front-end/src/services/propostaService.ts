@@ -4,16 +4,26 @@ export interface PropostaDetalhe {
   cliente: {
     id: number;
     nome: string;
+    cpf: string;
     cidade: string;
     estado: string;
+    cep: string;
+    rua: string;
+    bairro: string;
+    numero: string;
     telefone: string;
     email: string;
     consumo_kwh_mes: number;
     tipo_ligacao: string;
     tipo_telhado: string;
+    vendedor_id: number;
+    vendedor_nome: string;
+    vendedor_cargo: string;
   };
   dimensionamento: {
     id: number;
+    latitude_cliente: number | null;
+    longitude_cliente: number | null;
     potencia_calculada_kwp: number;
     valor_total_sistema: number;
     lucro_liquido_empresa: number;

@@ -6,6 +6,7 @@ from .views import (
     DimensionamentoGeoCalcularAPIView,
     OrcamentoEtapasCreateAPIView,
     PropostaDetalheAPIView,
+    PropostaRecalcularAPIView,
     PropostaStatusUpdateAPIView,
 )
 
@@ -15,6 +16,11 @@ urlpatterns = [
     path("dashboard/", DashboardAPIView.as_view(), name="dashboard"),
     path("<int:pk>/detalhe/", PropostaDetalheAPIView.as_view(), name="detalhe"),
     path("<int:pk>/status/", PropostaStatusUpdateAPIView.as_view(), name="status"),
+    path(
+        "<int:pk>/recalcular/",
+        PropostaRecalcularAPIView.as_view(),
+        name="recalcular",
+    ),
     path("calcular/", DimensionamentoCalcularAPIView.as_view(), name="calcular"),
     path(
         "calcular-geo/",

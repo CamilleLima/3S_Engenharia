@@ -70,6 +70,28 @@ class Dimensionamento(models.Model):
         validators=[MinValueValidator(Decimal("0"))],
         verbose_name="Taxa de Juros Mensal Decimal",
     )
+    latitude_cliente = models.DecimalField(
+        max_digits=10,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("-90")),
+            MaxValueValidator(Decimal("90")),
+        ],
+        verbose_name="Latitude do Cliente",
+    )
+    longitude_cliente = models.DecimalField(
+        max_digits=10,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(Decimal("-180")),
+            MaxValueValidator(Decimal("180")),
+        ],
+        verbose_name="Longitude do Cliente",
+    )
 
     # Saídas
     potencia_calculada_kwp = models.DecimalField(

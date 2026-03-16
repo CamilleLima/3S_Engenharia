@@ -42,6 +42,11 @@ export interface OrcamentoEtapasResposta {
   };
 }
 
+export interface RecalcularDimensionamentoPayload {
+  latitude_cliente: number;
+  longitude_cliente: number;
+}
+
 export async function calcularDimensionamento(dados: DimensionamentoPayload) {
   const response = await api.post("/dimensionamento/calcular/", dados);
   return response.data;
@@ -50,6 +55,17 @@ export async function calcularDimensionamento(dados: DimensionamentoPayload) {
 export async function criarOrcamentoEmEtapas(dados: OrcamentoEtapasPayload) {
   const response = await api.post<OrcamentoEtapasResposta>(
     "/dimensionamento/orcamento/etapas/",
+    dados
+  );
+  return response.data;
+}
+
+export async function recalcularDimensionamentoProposta(
+  dimensionamentoId: string | number,
+  dados: RecalcularDimensionamentoPayload
+) {
+  const response = await api.patch(
+    `/dimensionamento/${dimensionamentoId}/recalcular/`,
     dados
   );
   return response.data;

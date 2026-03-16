@@ -249,19 +249,29 @@ class PropostaClienteSerializer(serializers.Serializer):
 
     id = serializers.IntegerField()
     nome = serializers.CharField()
+    cpf = serializers.CharField()
     cidade = serializers.CharField()
     estado = serializers.CharField()
+    cep = serializers.CharField()
+    rua = serializers.CharField()
+    bairro = serializers.CharField()
+    numero = serializers.CharField()
     telefone = serializers.CharField(allow_blank=True)
     email = serializers.CharField(allow_blank=True)
     consumo_kwh_mes = serializers.FloatField()
     tipo_ligacao = serializers.CharField()
     tipo_telhado = serializers.CharField()
+    vendedor_id = serializers.IntegerField()
+    vendedor_nome = serializers.CharField()
+    vendedor_cargo = serializers.CharField()
 
 
 class PropostaDimensionamentoSerializer(serializers.Serializer):
     """Dados de dimensionamento na visualização detalhada da proposta."""
 
     id = serializers.IntegerField()
+    latitude_cliente = serializers.FloatField(allow_null=True)
+    longitude_cliente = serializers.FloatField(allow_null=True)
     potencia_calculada_kwp = serializers.FloatField()
     valor_total_sistema = serializers.FloatField()
     lucro_liquido_empresa = serializers.FloatField()
@@ -297,3 +307,10 @@ class PropostaStatusUpdateSerializer(serializers.Serializer):
     """Payload para atualização de status da proposta."""
 
     status = serializers.ChoiceField(choices=["pending", "accepted", "rejected"])
+
+
+class PropostaRecalculoSerializer(serializers.Serializer):
+    """Payload para recalcular uma proposta após visita técnica."""
+
+    latitude_cliente = serializers.FloatField(min_value=-90, max_value=90)
+    longitude_cliente = serializers.FloatField(min_value=-180, max_value=180)
