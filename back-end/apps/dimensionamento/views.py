@@ -150,12 +150,6 @@ class OrcamentoEtapasCreateAPIView(APIView):
 class DashboardAPIView(APIView):
     """Retorna resumo e lista de orçamentos para a dashboard."""
 
-    @staticmethod
-    def _status_efetivo(dimensionamento: Dimensionamento, has_financeiro: bool) -> str:
-        if dimensionamento.status == Dimensionamento.STATUS_PENDING and has_financeiro:
-            return Dimensionamento.STATUS_ACCEPTED
-        return dimensionamento.status
-
     def get(self, request, *args, **kwargs):
         financeiro_subquery = CalculoFinanceiro.objects.filter(
             dimensionamento=OuterRef("pk")
@@ -175,7 +169,7 @@ class DashboardAPIView(APIView):
                 "power": float(item.potencia_calculada_kwp),
                 "value": float(item.valor_total_sistema),
                 "date": item.created_at.strftime("%d/%m/%Y"),
-                "status": self._status_efetivo(item, item.has_financeiro),
+                "status": item.status,
                 "consumption": float(item.cliente.consumo_kwh_mes),
             }
             for item in queryset
@@ -216,12 +210,6 @@ class PropostaDetalheAPIView(APIView):
             .first()
         )
         has_financeiro = financeiro is not None
-        status_efetivo = (
-            Dimensionamento.STATUS_ACCEPTED
-            if dimensionamento.status == Dimensionamento.STATUS_PENDING
-            and has_financeiro
-            else dimensionamento.status
-        )
 
         data = {
             "cliente": {
@@ -279,7 +267,7 @@ class PropostaDetalheAPIView(APIView):
                 if financeiro
                 else None
             ),
-            "status": status_efetivo,
+            "status": dimensionamento.status,
         }
 
         serializer = PropostaDetalheSerializer(data=data)
