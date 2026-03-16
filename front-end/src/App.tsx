@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard/index.tsx";
 import EditarProposta from "./pages/EditarProposta/index.tsx";
 import Configuracoes from "./pages/Configuracoes/index.tsx";
 import FormularioProposta from "./pages/FormularioProposta/index.tsx";
+import PreviewPdfProposta from "./pages/PreviewPdfProposta/index.tsx";
 import PropostaDetalhes from "./pages/PropostaDetalhes/index.tsx";
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="configuracoes" element={<Configuracoes />} />
             <Route path="proposta/:id" element={<PropostaDetalhes />} />
             <Route path="proposta/:id/editar" element={<EditarProposta />} />
+            <Route path="proposta/:id/preview-pdf" element={<PreviewPdfProposta />} />
             <Route path="financeiro" element={<Navigate to="/dashboard" replace />} />
             <Route path="documentos" element={<Navigate to="/dashboard" replace />} />
           </Route>

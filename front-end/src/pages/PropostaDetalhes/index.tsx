@@ -6,6 +6,7 @@ import {
   DollarSign,
   Download,
   Edit,
+  FileText,
   XCircle,
   Sun,
   TrendingUp,
@@ -189,6 +190,16 @@ export default function PropostaDetalhes() {
             >
               <Edit className="w-5 h-5" />
               Editar Proposta
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                navigate(`/proposta/${proposta.dimensionamento.id}/preview-pdf`)
+              }
+              className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              <FileText className="w-5 h-5" />
+              Visualizar PDF
             </button>
             <button
               type="button"
