@@ -243,6 +243,9 @@ class PropostaDetalheAPIView(APIView):
                     if dimensionamento.longitude_cliente is not None
                     else None
                 ),
+                "custo_kit": float(dimensionamento.custo_kit),
+                "custo_adicionais": float(dimensionamento.custo_adicionais),
+                "margem_lucro_decimal": float(dimensionamento.margem_lucro_decimal),
                 "potencia_calculada_kwp": float(dimensionamento.potencia_calculada_kwp),
                 "valor_total_sistema": float(dimensionamento.valor_total_sistema),
                 "lucro_liquido_empresa": float(dimensionamento.lucro_liquido_empresa),
@@ -313,6 +316,12 @@ class PropostaRecalcularAPIView(APIView):
 
         latitude = serializer.validated_data["latitude_cliente"]
         longitude = serializer.validated_data["longitude_cliente"]
+        custo_kit = serializer.validated_data.get(
+            "custo_kit", dimensionamento.custo_kit
+        )
+        custo_adicionais = serializer.validated_data.get(
+            "custo_adicionais", dimensionamento.custo_adicionais
+        )
 
         service = DimensionamentoComGeolocalizacaoService()
         try:
@@ -322,8 +331,8 @@ class PropostaRecalcularAPIView(APIView):
                 latitude_cliente=latitude,
                 longitude_cliente=longitude,
                 estacoes_solares=obter_estacoes_solares_referencia(),
-                custo_kit=float(dimensionamento.custo_kit),
-                custo_adicionais=float(dimensionamento.custo_adicionais),
+                custo_kit=float(custo_kit),
+                custo_adicionais=float(custo_adicionais),
                 margem_lucro_decimal=float(dimensionamento.margem_lucro_decimal),
                 imposto_servico_decimal=float(dimensionamento.imposto_servico_decimal),
                 taxa_juros_mensal_decimal=float(
@@ -336,6 +345,8 @@ class PropostaRecalcularAPIView(APIView):
         dimensionamento.consumos_mensais = [float(dimensionamento.cliente.consumo_kwh_mes)] * 12
         dimensionamento.latitude_cliente = latitude
         dimensionamento.longitude_cliente = longitude
+        dimensionamento.custo_kit = custo_kit
+        dimensionamento.custo_adicionais = custo_adicionais
         dimensionamento.irradiacao_media_cidade = resultado["irradiacao_media_cidade"]
         dimensionamento.fator_perda_decimal = resultado["fator_perda_decimal"]
         dimensionamento.potencia_calculada_kwp = resultado["potencia_calculada_kwp"]
@@ -347,6 +358,8 @@ class PropostaRecalcularAPIView(APIView):
                 "consumos_mensais",
                 "latitude_cliente",
                 "longitude_cliente",
+                "custo_kit",
+                "custo_adicionais",
                 "irradiacao_media_cidade",
                 "fator_perda_decimal",
                 "potencia_calculada_kwp",

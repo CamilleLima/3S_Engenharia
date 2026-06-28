@@ -272,6 +272,9 @@ class PropostaDimensionamentoSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     latitude_cliente = serializers.FloatField(allow_null=True)
     longitude_cliente = serializers.FloatField(allow_null=True)
+    custo_kit = serializers.FloatField()
+    custo_adicionais = serializers.FloatField()
+    margem_lucro_decimal = serializers.FloatField()
     potencia_calculada_kwp = serializers.FloatField()
     valor_total_sistema = serializers.FloatField()
     lucro_liquido_empresa = serializers.FloatField()
@@ -314,3 +317,15 @@ class PropostaRecalculoSerializer(serializers.Serializer):
 
     latitude_cliente = serializers.FloatField(min_value=-90, max_value=90)
     longitude_cliente = serializers.FloatField(min_value=-180, max_value=180)
+    custo_kit = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        min_value=Decimal("0"),
+    )
+    custo_adicionais = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        required=False,
+        min_value=Decimal("0"),
+    )

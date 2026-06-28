@@ -35,6 +35,7 @@ import {
   citiesByState,
 } from "../../utils/brazilianLocations.ts";
 import { formatarMoeda } from "../../utils/formatters.ts";
+import { calcularCustoAdicionaisKitCliente } from "../../utils/kitClienteCalculos.ts";
 import { formatPhone, unformatPhone } from "../../utils/phoneMask.ts";
 
 type ConnectionType = "monofasico" | "bifasico" | "trifasico";
@@ -68,6 +69,7 @@ interface SellerFormData {
 interface DimensionamentoFormData {
   latitudeCliente: string;
   longitudeCliente: string;
+  valorKitCliente: string;
 }
 
 interface FinanceiroFormData {
@@ -101,6 +103,7 @@ const initialSellerForm: SellerFormData = {
 const initialDimensionamentoForm: DimensionamentoFormData = {
   latitudeCliente: "",
   longitudeCliente: "",
+  valorKitCliente: "",
 };
 
 function digitsOnly(value: string) {
@@ -257,12 +260,14 @@ export default function FormularioProposta() {
           Number(formData.consumption) > 0 &&
           Number(financeiroData.tarifaEnergiaKwh) > 0 &&
           dimensionamentoData.latitudeCliente &&
-          dimensionamentoData.longitudeCliente
+          dimensionamentoData.longitudeCliente &&
+          Number(dimensionamentoData.valorKitCliente) > 0
       ),
     [
       canProceedStep1,
       dimensionamentoData.latitudeCliente,
       dimensionamentoData.longitudeCliente,
+      dimensionamentoData.valorKitCliente,
       financeiroData.tarifaEnergiaKwh,
       formData.consumption,
     ]
@@ -407,6 +412,10 @@ export default function FormularioProposta() {
     uf: formData.state,
     latitude_cliente: Number(dimensionamentoData.latitudeCliente),
     longitude_cliente: Number(dimensionamentoData.longitudeCliente),
+    custo_kit: Number(dimensionamentoData.valorKitCliente),
+    custo_adicionais: calcularCustoAdicionaisKitCliente(
+      Number(dimensionamentoData.valorKitCliente)
+    ),
   });
 
   const buildFinanceiroPayload = (dimensionamentoId: number) => ({
@@ -883,6 +892,24 @@ export default function FormularioProposta() {
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="Ex: -67.82"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Valor do Kit do Cliente *
+                  </label>
+                  <input
+                    type="number"
+                    value={dimensionamentoData.valorKitCliente}
+                    onChange={(e) =>
+                      updateDimensionamento("valorKitCliente", e.target.value)
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="Ex: 12200"
+                    min="0"
+                    step="0.01"
                     required
                   />
                 </div>

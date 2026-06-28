@@ -23,6 +23,7 @@ import {
 } from "../../services/propostaService.ts";
 import { gerarPdfProposta } from "../../services/documentosService.ts";
 import { formatarMoeda } from "../../utils/formatters.ts";
+import { calcularValorTotalSistemaKitCliente } from "../../utils/kitClienteCalculos.ts";
 
 function statusPillClass(status: "pending" | "accepted" | "rejected") {
   if (status === "accepted") {
@@ -42,6 +43,28 @@ function statusLabel(status: "pending" | "accepted" | "rejected") {
     return "Recusada";
   }
   return "Pendente";
+}
+
+function resolverValorTotalSistema(
+  dimensionamento: PropostaDetalhe["dimensionamento"]
+) {
+  const valorKitCliente = Number(dimensionamento.custo_kit);
+  const custoAdicionais = Number(dimensionamento.custo_adicionais);
+  const margemLucroDecimal = Number(dimensionamento.margem_lucro_decimal);
+
+  if (
+    Number.isFinite(valorKitCliente) &&
+    Number.isFinite(custoAdicionais) &&
+    Number.isFinite(margemLucroDecimal)
+  ) {
+    return calcularValorTotalSistemaKitCliente(
+      valorKitCliente,
+      custoAdicionais,
+      margemLucroDecimal
+    );
+  }
+
+  return Number(dimensionamento.valor_total_sistema);
 }
 
 export default function PropostaDetalhes() {
@@ -83,6 +106,16 @@ export default function PropostaDetalhes() {
       .map(([meses, valor]) => [meses, Number(valor)] as [string, number])
       .sort((a, b) => Number(a[0]) - Number(b[0]));
   }, [proposta]);
+
+  const valorTotalSistema = useMemo(() => {
+    if (!proposta) {
+      return 0;
+    }
+
+    return resolverValorTotalSistema(proposta.dimensionamento);
+  }, [proposta]);
+
+  const valorTotalSistemaFormatado = formatarMoeda(valorTotalSistema);
 
   const handleStatusChange = async (novoStatus: PropostaStatus) => {
     if (!proposta || !id) {
@@ -312,7 +345,7 @@ export default function PropostaDetalhes() {
             <div>
               <p className="text-orange-100 text-sm">Valor do Sistema</p>
               <p className="text-2xl font-bold mt-1">
-                {formatarMoeda(proposta.dimensionamento.valor_total_sistema)}
+                {valorTotalSistemaFormatado}
               </p>
             </div>
             <div>
@@ -338,7 +371,7 @@ export default function PropostaDetalhes() {
             </div>
             <p className="text-sm text-gray-600">Valor Total do Sistema</p>
             <p className="text-4xl font-bold text-gray-800 mt-1">
-              {formatarMoeda(proposta.dimensionamento.valor_total_sistema)}
+              {valorTotalSistemaFormatado}
             </p>
           </div>
 

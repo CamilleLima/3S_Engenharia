@@ -45,6 +45,8 @@ export interface OrcamentoEtapasResposta {
 export interface RecalcularDimensionamentoPayload {
   latitude_cliente: number;
   longitude_cliente: number;
+  custo_kit?: number;
+  custo_adicionais?: number;
 }
 
 export async function calcularDimensionamento(dados: DimensionamentoPayload) {

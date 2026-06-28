@@ -7,6 +7,7 @@ import { atualizarCliente } from "../../services/clientesService.ts";
 import { recalcularDimensionamentoProposta } from "../../services/dimensionamentoService.ts";
 import { obterPropostaDetalhe, type PropostaDetalhe } from "../../services/propostaService.ts";
 import { formatarMoeda } from "../../utils/formatters.ts";
+import { calcularCustoAdicionaisKitCliente } from "../../utils/kitClienteCalculos.ts";
 import { formatPhone, unformatPhone } from "../../utils/phoneMask.ts";
 
 interface EditarFormData {
@@ -23,6 +24,7 @@ interface EditarFormData {
   consumo_kwh_mes: string;
   latitude_cliente: string;
   longitude_cliente: string;
+  valor_kit_cliente: string;
   tipo_ligacao: "monofasico" | "bifasico" | "trifasico";
   tipo_telhado: "ceramico" | "metalico" | "laje" | "fibrocimento";
 }
@@ -82,6 +84,7 @@ export default function EditarProposta() {
             typeof longitude === "number" && Number.isFinite(longitude)
               ? String(longitude)
               : "",
+          valor_kit_cliente: String(data.dimensionamento.custo_kit),
           tipo_ligacao: data.cliente.tipo_ligacao as EditarFormData["tipo_ligacao"],
           tipo_telhado: data.cliente.tipo_telhado as EditarFormData["tipo_telhado"],
         });
@@ -169,6 +172,7 @@ export default function EditarProposta() {
     const consumo = Number(formData.consumo_kwh_mes);
     const latitude = Number(formData.latitude_cliente);
     const longitude = Number(formData.longitude_cliente);
+    const valorKitCliente = Number(formData.valor_kit_cliente);
 
     if (
       !formData.nome.trim() ||
@@ -180,7 +184,9 @@ export default function EditarProposta() {
       latitude > 90 ||
       !Number.isFinite(longitude) ||
       longitude < -180 ||
-      longitude > 180
+      longitude > 180 ||
+      !Number.isFinite(valorKitCliente) ||
+      valorKitCliente <= 0
     ) {
       toast.error("Preencha corretamente os campos obrigatórios.");
       return;
@@ -207,6 +213,8 @@ export default function EditarProposta() {
       await recalcularDimensionamentoProposta(proposta.dimensionamento.id, {
         latitude_cliente: latitude,
         longitude_cliente: longitude,
+        custo_kit: valorKitCliente,
+        custo_adicionais: calcularCustoAdicionaisKitCliente(valorKitCliente),
       });
 
       toast.success("Proposta atualizada com sucesso.");
@@ -428,6 +436,20 @@ export default function EditarProposta() {
                 value={formData.longitude_cliente}
                 onChange={(e) => updateField("longitude_cliente", e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                required
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Valor do Kit do Cliente *</label>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={formData.valor_kit_cliente}
+                onChange={(e) => updateField("valor_kit_cliente", e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Ex: 12200"
                 required
               />
             </div>

@@ -24,6 +24,9 @@ export interface PropostaDetalhe {
     id: number;
     latitude_cliente: number | null;
     longitude_cliente: number | null;
+    custo_kit: number;
+    custo_adicionais: number;
+    margem_lucro_decimal: number;
     potencia_calculada_kwp: number;
     valor_total_sistema: number;
     lucro_liquido_empresa: number;
