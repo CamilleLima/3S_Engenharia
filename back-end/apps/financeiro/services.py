@@ -1,14 +1,19 @@
 from decimal import ROUND_HALF_UP, Decimal
 
 
+DecimalInput = Decimal | int | float | str
+
+
 class CalculoFinanceiroService:
     """Serviço de cálculo de payback/ROI baseado no dimensionamento."""
+
+    GERACAO_EXCEDENTE_DECIMAL = Decimal("0.10")
 
     def __init__(
         self,
         dimensionamento,
-        tarifa_energia_kwh,
-        custo_disponibilidade_rs=Decimal("50.00"),
+        tarifa_energia_kwh: DecimalInput,
+        custo_disponibilidade_rs: DecimalInput = Decimal("50.00"),
     ):
         self.dimensionamento = dimensionamento
         self.tarifa_energia_kwh = self._to_decimal(tarifa_energia_kwh)
@@ -17,11 +22,11 @@ class CalculoFinanceiroService:
         self._validar_entrada()
 
     @staticmethod
-    def _to_decimal(valor):
+    def _to_decimal(valor: DecimalInput) -> Decimal:
         return Decimal(str(valor))
 
     @staticmethod
-    def _round_money(valor):
+    def _round_money(valor: Decimal) -> Decimal:
         return valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def _validar_entrada(self):
@@ -33,16 +38,11 @@ class CalculoFinanceiroService:
 
     def calcular(self):
         investimento_total = self._to_decimal(self.dimensionamento.valor_total_sistema)
-        potencia_kwp = self._to_decimal(self.dimensionamento.potencia_calculada_kwp)
-        irradiacao = self._to_decimal(self.dimensionamento.irradiacao_media_cidade)
-        fator_perda = self._to_decimal(self.dimensionamento.fator_perda_decimal)
-
-        performance_ratio = Decimal("1") - fator_perda
-        if performance_ratio <= 0:
-            raise ValueError("fator_perda_decimal inválido para cálculo financeiro.")
-
-        geracao_mensal_kwh = (
-            potencia_kwp * irradiacao * Decimal("30") * performance_ratio
+        consumo_medio_mensal = self._to_decimal(
+            self.dimensionamento.cliente.consumo_kwh_mes
+        )
+        geracao_mensal_kwh = consumo_medio_mensal * (
+            Decimal("1") + self.GERACAO_EXCEDENTE_DECIMAL
         )
         economia_bruta_mensal = geracao_mensal_kwh * self.tarifa_energia_kwh
         economia_liquida_mensal = economia_bruta_mensal - self.custo_disponibilidade_rs

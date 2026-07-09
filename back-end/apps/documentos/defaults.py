@@ -158,6 +158,11 @@ def _round(value: Decimal | float, digits: int) -> float:
     return round(float(value), digits)
 
 
+def _monthly_generation_from_consumption(dimensionamento: Dimensionamento) -> float:
+    consumo_medio_mensal = Decimal(str(dimensionamento.cliente.consumo_kwh_mes))
+    return _round(consumo_medio_mensal * Decimal("1.10"), 2)
+
+
 def _build_monthly_generation_data(
     *,
     dimensionamento: Dimensionamento,
@@ -183,13 +188,7 @@ def _build_monthly_generation_data(
     if calculo_financeiro:
         monthly_generation = _round(calculo_financeiro.geracao_mensal_kwh, 2)
     else:
-        potencia = Decimal(str(dimensionamento.potencia_calculada_kwp))
-        fator_perda = Decimal(str(dimensionamento.fator_perda_decimal))
-        performance_ratio = Decimal("1") - fator_perda
-        monthly_generation = _round(
-            potencia * Decimal(str(irradiation)) * Decimal("30") * performance_ratio,
-            2,
-        )
+        monthly_generation = _monthly_generation_from_consumption(dimensionamento)
 
     return [
         {
@@ -232,11 +231,9 @@ def build_initial_preview_state(
             float(calculo_financeiro.geracao_mensal_kwh)
         )
     else:
-        potencia = Decimal(str(dimensionamento.potencia_calculada_kwp))
-        irradiacao = Decimal(str(dimensionamento.irradiacao_media_cidade))
-        fator_perda = Decimal(str(dimensionamento.fator_perda_decimal))
-        geracao = potencia * irradiacao * Decimal("30") * (Decimal("1") - fator_perda)
-        editable["monthlyGenerationKwh"] = str(_round(geracao, 2))
+        editable["monthlyGenerationKwh"] = str(
+            _monthly_generation_from_consumption(dimensionamento)
+        )
 
     services = base.get("services", [])
     editable["includedServices"] = "\n".join(services)

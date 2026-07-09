@@ -55,12 +55,12 @@ class TestCalculoFinanceiro:
         resultado = service.calcular()
 
         assert resultado["investimento_total_rs"] == 18470.0
-        assert resultado["geracao_mensal_kwh"] == 299.84
-        assert resultado["economia_mensal_rs"] == 234.85
-        assert resultado["payback_meses"] == 78.65
-        assert resultado["payback_anos"] == 6.55
-        assert resultado["economia_anual_rs"] == 2818.16
-        assert resultado["economia_25_anos_rs"] == 70453.9
+        assert resultado["geracao_mensal_kwh"] == 330.0
+        assert resultado["economia_mensal_rs"] == 263.5
+        assert resultado["payback_meses"] == 70.09
+        assert resultado["payback_anos"] == 5.84
+        assert resultado["economia_anual_rs"] == 3162.0
+        assert resultado["economia_25_anos_rs"] == 79050.0
 
     def test_tarifa_energia_invalida(self, dimensionamento):
         with pytest.raises(ValueError, match="tarifa_energia_kwh"):

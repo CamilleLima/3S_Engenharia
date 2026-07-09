@@ -66,8 +66,9 @@ class TestCalculoFinanceiroAPI:
 
         assert response.status_code == status.HTTP_201_CREATED
         assert float(response.data["investimento_total_rs"]) == 18470.0
-        assert float(response.data["economia_mensal_rs"]) == 234.85
-        assert float(response.data["payback_meses"]) == 78.65
+        assert float(response.data["geracao_mensal_kwh"]) == 330.0
+        assert float(response.data["economia_mensal_rs"]) == 263.5
+        assert float(response.data["payback_meses"]) == 70.09
 
         assert CalculoFinanceiro.objects.count() == 1
 
