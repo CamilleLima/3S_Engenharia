@@ -1,0 +1,63 @@
+# =============================================================================
+# 3S Engenharia — pyproject.toml
+# Configuração central do Ruff (linting + formatação)
+# =============================================================================
+
+[tool.ruff]
+# Mesma linha que black usa — compatível com a maioria dos projetos Django
+line-length = 88
+target-version = "py310"
+
+# Pastas a ignorar completamente
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "migrations",
+    "staticfiles",
+    "media",
+]
+
+# ---------------------------------------------------------------------------
+# Linting
+# ---------------------------------------------------------------------------
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (ordenação de imports)
+    "B",   # flake8-bugbear (boas práticas)
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade (modernização de sintaxe Python)
+    "DJ",  # flake8-django (boas práticas específicas de Django)
+]
+ignore = [
+    "E203",  # espaço antes de ":" — sem conflito com formatador
+    "B008",  # chamadas de função em argumentos padrão (comum em Django)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps"]
+known-third-party = ["django", "rest_framework", "corsheaders"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Nos arquivos de settings é comum importar tudo com *
+"backend_django/settings/*.py" = ["F401", "F403", "F405"]
+# Nos testes, assert simples é esperado
+"apps/*/tests/*.py" = ["S101"]
+
+# ---------------------------------------------------------------------------
+# Formatação (substitui black)
+# ---------------------------------------------------------------------------
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

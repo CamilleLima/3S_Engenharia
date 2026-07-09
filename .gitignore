@@ -205,3 +205,15 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# 3S Engenharia — projeto específico
+
+# Django
+back-end/db.sqlite3
+back-end/media/
+back-end/staticfiles/
+
+# Frontend — Node / Vite
+front-end/node_modules/
+front-end/dist/
+front-end/.env

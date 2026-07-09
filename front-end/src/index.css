@@ -1,0 +1,7 @@
+/* TODO: importar fontes externas se necessário (ex: Google Fonts) */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TODO: definir estilos globais, variáveis CSS e reset de acordo com o design */
